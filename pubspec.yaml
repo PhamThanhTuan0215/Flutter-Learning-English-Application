@@ -36,6 +36,8 @@ dependencies:
     cupertino_icons: ^1.0.2
     get: ^4.6.6
     websafe_svg: ^3.0.1+1
+    shared_preferences: ^2.2.3
+    jwt_decoder: ^2.0.1
 
 dev_dependencies:
     flutter_test:
