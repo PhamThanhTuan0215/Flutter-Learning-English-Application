@@ -21,9 +21,31 @@ class _LibraryScreenState extends State<LibraryScreen>
   final urlRoot = kIsWeb ? WEB_URL : ANDROID_URL;
   List<Topic> topics = [];
   List<Topic> searchTopics = [];
-  String selectedFilter = 'During 7 days';
+  String selectedFilter = 'This Month';
   late TabController _tabController;
   bool isSearching = false;
+
+  void deleteTopic(String topicId) {
+    setState(() {
+      topics.removeWhere((topic) => topic.id == topicId);
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Remove word successfully'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void updateWord(Topic topic) {
+    setState(() {
+      int index = topics.indexWhere((t) => t.id == topic.id);
+      if (index != -1) {
+        topics[index] = topic;
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -50,6 +72,118 @@ class _LibraryScreenState extends State<LibraryScreen>
     } catch (err) {
       print(err);
     }
+  }
+
+  Future<void> addTopic(topicName, isPublic) async {
+    try {
+      var response = await http.post(Uri.parse('${urlRoot}/topics/add'),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: jsonEncode(<String, dynamic>{
+            'topicName': topicName,
+            'isPublic': isPublic,
+            'owner': widget.username
+          }));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 0) {
+          setState(() {
+            var newTopic = Topic.fromJson(data['topic']);
+            topics.insert(0, newTopic);
+            selectedFilter = 'Today';
+          });
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(data['message'].toString()),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to add word'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        throw Exception('Failed to add word');
+      }
+    } catch (err) {
+      print(err);
+    }
+  }
+
+  void _addTopicDialog() {
+    var _key = GlobalKey<FormState>();
+
+    String topicName = '';
+    bool isPublic = false;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: Text("Add New Topic"),
+            content: Form(
+              key: _key,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    decoration: InputDecoration(
+                        labelText: 'Topic Name', border: OutlineInputBorder()),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter topic name';
+                      }
+                    },
+                    onSaved: (value) {
+                      topicName = value ?? '';
+                    },
+                  ),
+                  Row(
+                    children: [
+                      Text("Public"),
+                      Checkbox(
+                        value: isPublic,
+                        onChanged: (bool? value) {
+                          setDialogState(() {
+                            isPublic = value ?? false;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text("Cancel"),
+              ),
+              TextButton(
+                onPressed: () {
+                  if (_key.currentState?.validate() ?? false) {
+                    _key.currentState?.save();
+
+                    addTopic(topicName, isPublic);
+                    Navigator.of(context).pop();
+                  }
+                },
+                child: Text("Save"),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -126,11 +260,12 @@ class _LibraryScreenState extends State<LibraryScreen>
                 children: [
                   Opacity(
                       opacity: isSearching ? 0.0 : 1.0,
-                      child: buildTopicSections(
-                          topics, selectedFilter, widget.username)),
+                      child: buildTopicSections(topics, selectedFilter,
+                          widget.username, deleteTopic, updateWord)),
                   Opacity(
                     opacity: isSearching ? 1.0 : 0.0,
-                    child: buildSearchTopics(searchTopics, widget.username),
+                    child: buildSearchTopics(
+                        searchTopics, widget.username, deleteTopic, updateWord),
                   ),
                 ],
               )
@@ -139,7 +274,7 @@ class _LibraryScreenState extends State<LibraryScreen>
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: _addTopicDialog,
         child: Icon(Icons.add),
       ),
     );
@@ -160,11 +295,13 @@ class _LibraryScreenState extends State<LibraryScreen>
   }
 }
 
-Widget buildSearchTopics(topics, username) {
-  return buildSection('Result search', topics, username);
+Widget buildSearchTopics(topics, username, deleteTopic, updateWord) {
+  return buildSection(
+      'Result search', topics, username, deleteTopic, updateWord);
 }
 
-Widget buildTopicSections(topics, selectedFilter, username) {
+Widget buildTopicSections(
+    topics, selectedFilter, username, deleteTopic, updateWord) {
   Map<String, List<Topic>> categorizedTopics = {
     'Today': [],
     'Yesterday': [],
@@ -178,22 +315,22 @@ Widget buildTopicSections(topics, selectedFilter, username) {
     String section = getSectionsFromCreateAt(topic.createAt);
     categorizedTopics[section]?.add(topic);
 
-    if (section != 'This Year' && section != 'More This Year') {
-      categorizedTopics['This Year']?.add(topic);
-    }
+    // if (section != 'This Year' && section != 'More This Year') {
+    //   categorizedTopics['This Year']?.add(topic);
+    // }
 
-    if (section != 'This Month' &&
-        section != 'This Year' &&
-        section != 'More This Year') {
-      categorizedTopics['This Month']?.add(topic);
-    }
+    // if (section != 'This Month' &&
+    //     section != 'This Year' &&
+    //     section != 'More This Year') {
+    //   categorizedTopics['This Month']?.add(topic);
+    // }
 
-    if (section != 'During 7 days' &&
-        section != 'This Month' &&
-        section != 'This Year' &&
-        section != 'More This Year') {
-      categorizedTopics['During 7 days']?.add(topic);
-    }
+    // if (section != 'During 7 days' &&
+    //     section != 'This Month' &&
+    //     section != 'This Year' &&
+    //     section != 'More This Year') {
+    //   categorizedTopics['During 7 days']?.add(topic);
+    // }
   }
 
   return ListView(
@@ -201,30 +338,48 @@ Widget buildTopicSections(topics, selectedFilter, username) {
     physics: NeverScrollableScrollPhysics(),
     children: [
       if (categorizedTopics['Today']!.length > 0 &&
-          (selectedFilter == 'Today' || selectedFilter == 'All'))
-        buildSection('Today', categorizedTopics['Today']!, username),
+          (selectedFilter == 'Today' ||
+              selectedFilter == 'During 7 days' ||
+              selectedFilter == 'This Month' ||
+              selectedFilter == 'This Year' ||
+              selectedFilter == 'All'))
+        buildSection('Today', categorizedTopics['Today']!, username,
+            deleteTopic, updateWord),
       if (categorizedTopics['Yesterday']!.length > 0 &&
-          (selectedFilter == 'Yesterday' || selectedFilter == 'All'))
-        buildSection('Yesterday', categorizedTopics['Yesterday']!, username),
+          (selectedFilter == 'Yesterday' ||
+              selectedFilter == 'During 7 days' ||
+              selectedFilter == 'This Month' ||
+              selectedFilter == 'This Year' ||
+              selectedFilter == 'All'))
+        buildSection('Yesterday', categorizedTopics['Yesterday']!, username,
+            deleteTopic, updateWord),
       if (categorizedTopics['During 7 days']!.length > 0 &&
-          (selectedFilter == 'During 7 days' || selectedFilter == 'All'))
-        buildSection(
-            'During 7 days', categorizedTopics['During 7 days']!, username),
+          (selectedFilter == 'During 7 days' ||
+              selectedFilter == 'This Month' ||
+              selectedFilter == 'This Year' ||
+              selectedFilter == 'All'))
+        buildSection('During 7 days', categorizedTopics['During 7 days']!,
+            username, deleteTopic, updateWord),
       if (categorizedTopics['This Month']!.length > 0 &&
-          (selectedFilter == 'This Month' || selectedFilter == 'All'))
-        buildSection('This Month', categorizedTopics['This Month']!, username),
+          (selectedFilter == 'This Month' ||
+              selectedFilter == 'This Year' ||
+              selectedFilter == 'All'))
+        buildSection('This Month', categorizedTopics['This Month']!, username,
+            deleteTopic, updateWord),
       if (categorizedTopics['This Year']!.length > 0 &&
           (selectedFilter == 'This Year' || selectedFilter == 'All'))
-        buildSection('This Year', categorizedTopics['This Year']!, username),
+        buildSection('This Year', categorizedTopics['This Year']!, username,
+            deleteTopic, updateWord),
       if (categorizedTopics['More This Year']!.length > 0 &&
           selectedFilter == 'All')
-        buildSection(
-            'More This Year', categorizedTopics['More This Year']!, username),
+        buildSection('More This Year', categorizedTopics['More This Year']!,
+            username, deleteTopic, updateWord),
     ],
   );
 }
 
-Widget buildSection(String title, List<Topic> topics, String username) {
+Widget buildSection(String title, List<Topic> topics, String username,
+    deleteTopic, updateWord) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -242,9 +397,10 @@ Widget buildSection(String title, List<Topic> topics, String username) {
         itemCount: topics.length,
         itemBuilder: (context, index) {
           return TopicItem(
-            topic: topics[index],
-            username: username,
-          );
+              topic: topics[index],
+              username: username,
+              onDelete: deleteTopic,
+              onUpdate: updateWord);
         },
       ),
     ],

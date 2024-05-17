@@ -1,6 +1,9 @@
 import 'package:application_learning_english/screens/account_screen.dart';
 import 'package:application_learning_english/screens/library_screen.dart';
+import 'package:application_learning_english/user.dart';
+import 'package:application_learning_english/utils/sessionUser.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(MyApp());
@@ -66,10 +69,37 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class Library extends StatelessWidget {
+class Library extends StatefulWidget {
+  @override
+  State<Library> createState() => _LibraryState();
+}
+
+class _LibraryState extends State<Library> {
+  String? username;
+
+  @override
+  void initState() {
+    super.initState();
+    loadUser();
+  }
+
+  void loadUser() async {
+    User? user = await getUserData();
+    setState(() {
+      username = user?.username;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return LibraryScreen(username: 'thanhtuan');
+    if (username == null) {
+      return Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    // Chỉ hiển thị LibraryScreen khi username đã được cập nhật
+    return LibraryScreen(username: username!);
   }
 }
 

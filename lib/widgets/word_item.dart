@@ -9,12 +9,14 @@ import 'package:http/http.dart' as http;
 class WordItem extends StatefulWidget {
   Word word;
   final Function(String) onDelete;
+  final Function(Word) onUpdate;
   final bool isEnableEdit;
 
   WordItem(
       {Key? key,
       required this.word,
       required this.onDelete,
+      required this.onUpdate,
       required this.isEnableEdit})
       : super(key: key);
 
@@ -34,6 +36,7 @@ class _WordItemState extends State<WordItem> {
         final data = jsonDecode(response.body);
         setState(() {
           widget.word = Word.fromJson(data['newWord']);
+          widget.onUpdate(Word.fromJson(data['newWord']));
         });
       } else {
         throw Exception('Failed to load topics');
@@ -61,6 +64,7 @@ class _WordItemState extends State<WordItem> {
         final data = jsonDecode(response.body);
         setState(() {
           widget.word = Word.fromJson(data['word']);
+          widget.onUpdate(Word.fromJson(data['word']));
         });
       } else {
         throw Exception('Failed to load topics');
@@ -228,12 +232,29 @@ class _WordItemState extends State<WordItem> {
               fontSize: 20.0,
             ),
           ),
-          subtitle: Text(
-            widget.word.vietnamese,
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 18.0,
-            ),
+          subtitle: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.word.vietnamese,
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 18.0,
+                ),
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              if (!widget.word.description.isEmpty)
+                Text(
+                  '(${widget.word.description})',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 16.0,
+                  ),
+                ),
+            ],
           ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
@@ -255,7 +276,7 @@ class _WordItemState extends State<WordItem> {
                 IconButton(
                   icon: Icon(
                     Icons.delete,
-                    color: Colors.red,
+                    color: Colors.black,
                   ),
                   onPressed: () {
                     confirmRemove();

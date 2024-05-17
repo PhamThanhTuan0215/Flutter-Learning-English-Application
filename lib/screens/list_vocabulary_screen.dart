@@ -9,6 +9,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
+import 'package:csv/csv.dart';
+
 class ListVocabularyScreen extends StatefulWidget {
   final List<Word> words;
   final Topic topic;
@@ -43,6 +47,15 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
         duration: Duration(seconds: 2),
       ),
     );
+  }
+
+  void updateWord(Word word) {
+    setState(() {
+      int index = widget.words.indexWhere((w) => w.id == word.id);
+      if (index != -1) {
+        widget.words[index] = word;
+      }
+    });
   }
 
   void _addVocabularyDialog() {
@@ -186,6 +199,47 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
     }
   }
 
+  void _importFile() async {
+    try {
+      // Chọn tệp CSV
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv'],
+      );
+
+      if (result != null && result.files.single.bytes != null) {
+        // Đọc dữ liệu từ tệp CSV
+        String fileContent = utf8.decode(result.files.single.bytes!);
+
+        // Phân tích cú pháp tệp CSV
+        List<List<dynamic>> csvData = CsvToListConverter().convert(fileContent);
+
+        // Tạo danh sách listWord từ dữ liệu CSV
+        List<Map<String, String>> listWord = [];
+        for (var i = 1; i < csvData.length; i++) {
+          listWord.add({
+            'english': csvData[i][0],
+            'vietnamese': csvData[i][1],
+          });
+        }
+
+        print(listWord);
+      } else {
+        print("No file selected or file is empty.");
+      }
+    } catch (e) {
+      if (kIsWeb) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Can not import file from web platform'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      print("Error picking or reading file: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -221,14 +275,24 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
         color: Colors.blueGrey[100],
         child: Padding(
           padding: const EdgeInsets.all(20.0),
-          child: ListView.builder(
-            itemCount: widget.words.length,
-            itemBuilder: (context, index) {
-              return WordItem(
-                  word: widget.words[index],
-                  onDelete: deleteWord,
-                  isEnableEdit: widget.isEnableEdit);
-            },
+          child: Column(
+            children: [
+              Text('Import file'),
+              IconButton(
+                  onPressed: _importFile, icon: Icon(Icons.document_scanner)),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: widget.words.length,
+                  itemBuilder: (context, index) {
+                    return WordItem(
+                        word: widget.words[index],
+                        onDelete: deleteWord,
+                        onUpdate: updateWord,
+                        isEnableEdit: widget.isEnableEdit);
+                  },
+                ),
+              ),
+            ],
           ),
         ),
       ),

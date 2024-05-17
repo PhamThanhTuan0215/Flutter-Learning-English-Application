@@ -11,12 +11,16 @@ import 'package:http/http.dart' as http;
 class TopicItem extends StatefulWidget {
   Topic topic;
   String username;
+  final Function(String) onDelete;
+  final Function(Topic) onUpdate;
 
-  TopicItem({
-    Key? key,
-    required this.topic,
-    required this.username,
-  }) : super(key: key);
+  TopicItem(
+      {Key? key,
+      required this.topic,
+      required this.username,
+      required this.onDelete,
+      required this.onUpdate})
+      : super(key: key);
 
   @override
   State<TopicItem> createState() => _TopicItemState();
@@ -40,8 +44,8 @@ class _TopicItemState extends State<TopicItem> {
 
   Future<void> fetchVocabulary() async {
     try {
-      var response = await http.get(
-          Uri.parse('${urlRoot}/topics/${widget.topic.id}/words/${widget.username}'));
+      var response = await http.get(Uri.parse(
+          '${urlRoot}/topics/${widget.topic.id}/words/${widget.username}'));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -87,6 +91,132 @@ class _TopicItemState extends State<TopicItem> {
     }
   }
 
+  Future<void> deleteTopic() async {
+    try {
+      var response = await http.delete(
+        Uri.parse('${urlRoot}/topics/delete/${widget.topic.id}'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 0) {
+          widget.onDelete(widget.topic.id);
+        }
+      } else {
+        throw Exception('Failed to remove word');
+      }
+    } catch (err) {
+      print(err);
+    }
+  }
+
+  Future<void> renameTopic(topicName) async {
+    try {
+      var response = await http.patch(
+        Uri.parse('${urlRoot}/topics/rename/${widget.topic.id}'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{'topicName': topicName}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 0) {
+          setState(() {
+            widget.topic = Topic.fromJson(data['updatedTopic']);
+            widget.onUpdate(Topic.fromJson(data['updatedTopic']));
+          });
+        }
+      } else {
+        throw Exception('Failed to load topics');
+      }
+    } catch (err) {
+      print(err);
+    }
+  }
+
+  void _renameTopicDialog() {
+    var _key = GlobalKey<FormState>();
+    var _topicNameController = TextEditingController();
+
+    String topicName = '';
+    _topicNameController.text = widget.topic.topicName;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: Text("Rename Topic"),
+            content: Form(
+              key: _key,
+              child: TextFormField(
+                controller: _topicNameController,
+                decoration: InputDecoration(
+                    labelText: 'Topic Name', border: OutlineInputBorder()),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter topic name';
+                  }
+                },
+                onSaved: (value) {
+                  topicName = value ?? '';
+                },
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text("Cancel"),
+              ),
+              TextButton(
+                onPressed: () {
+                  if (_key.currentState?.validate() ?? false) {
+                    _key.currentState?.save();
+
+                    renameTopic(topicName);
+                    Navigator.of(context).pop();
+                  }
+                },
+                child: Text("Save"),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void confirmDelete() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Confirm Deletion"),
+          content: Text("Are you sure you want to delete this topic?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                deleteTopic();
+              },
+              child: Text("Delete"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return InkWell(
@@ -95,7 +225,11 @@ class _TopicItemState extends State<TopicItem> {
           context,
           MaterialPageRoute(
             builder: (context) => ListVocabularyScreen(
-                topic: widget.topic, words: words, isEnableEdit: isEnableEdit, username: widget.username,),
+              topic: widget.topic,
+              words: words,
+              isEnableEdit: isEnableEdit,
+              username: widget.username,
+            ),
           ),
         );
 
@@ -108,59 +242,86 @@ class _TopicItemState extends State<TopicItem> {
         margin: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
         child: Padding(
           padding: const EdgeInsets.all(15.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              Text(
-                widget.topic.topicName,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 10),
-              Row(
-                children: [
-                  Icon(Icons.library_books, color: Colors.blue),
-                  SizedBox(width: 10),
-                  Text(
-                    '${widget.topic.total} items',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 5),
-              if (isEnableEdit)
-                Row(
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.timeline, color: Colors.green),
-                    SizedBox(width: 10),
-                    Text(
-                      'Progress: ${masteredWords.length}/${widget.topic.total}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.black87,
+                    Row(
+                      children: [
+                        Text(
+                          widget.topic.topicName,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(
+                          width: 16.0,
+                        ),
+                        if (widget.topic.isPublic) Icon(Icons.public)
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Icon(Icons.library_books, color: Colors.blue),
+                        SizedBox(width: 10),
+                        Text(
+                          '${widget.topic.total} items',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 5),
+                    if (isEnableEdit)
+                      Row(
+                        children: [
+                          Icon(Icons.timeline, color: Colors.green),
+                          SizedBox(width: 10),
+                          Text(
+                            'Progress: ${masteredWords.length}/${widget.topic.total}',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
                       ),
+                    SizedBox(height: 5),
+                    Row(
+                      children: [
+                        Icon(Icons.person, color: Colors.red),
+                        SizedBox(width: 10),
+                        Text(
+                          '${widget.topic.owner}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              SizedBox(height: 5),
-              Row(
-                children: [
-                  Icon(Icons.person, color: Colors.red),
-                  SizedBox(width: 10),
-                  Text(
-                    '${widget.topic.owner}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ],
               ),
+              if (isEnableEdit)
+                Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.edit, color: Colors.blueGrey),
+                      onPressed: _renameTopicDialog,
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete, color: Colors.black),
+                      onPressed: confirmDelete,
+                    ),
+                  ],
+                ),
             ],
           ),
         ),
