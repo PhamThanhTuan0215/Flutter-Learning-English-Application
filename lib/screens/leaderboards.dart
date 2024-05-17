@@ -1,5 +1,13 @@
-import 'package:flutter/cupertino.dart';
+import 'package:application_learning_english/models/Achievement.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:application_learning_english/config.dart';
+import "package:shared_preferences/shared_preferences.dart";
+import '../utils/sessionUser.dart';
+
+import '../user.dart';
 
 class LeaderBoards extends StatefulWidget {
   @override
@@ -7,28 +15,38 @@ class LeaderBoards extends StatefulWidget {
 }
 
 class _LeaderBoardsState extends State<LeaderBoards> {
+  final url_root = kIsWeb ? WEB_URL : ANDROID_URL;
 
-  // Placeholder data
-  List<Map<String, dynamic>> listMLB = [
-    {
-      'photo_user': '',
-      'name_user': 'User 1',
-      'score': 150,
-      'badge': []
-    },
-    {
-      'photo_user': '',
-      'name_user': 'User 2',
-      'score': 120,
-      'badge': []
-    },
-    {
-      'photo_user': '',
-      'name_user': 'User 3',
-      'score': 100,
-      'badge': []
+  Future<List<Achievement>>? futureAchievement;
+  late SharedPreferences prefs;
+  User? user;
+
+  @override
+  void initState() {
+    super.initState();
+    loadUser();
+    // futureAchievement = fetchAchievement();
+  }
+
+  loadUser() async {
+    user = await getUserData();
+    if (user != null) {
+      futureAchievement = fetchAchievement();
     }
-  ];
+    setState(() {});
+  }
+
+
+  Future<List<Achievement>> fetchAchievement() async {
+    final response = await http.get(Uri.parse('$url_root/achievements/personal-achivements/${user!.username}'));
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+      final List<dynamic> achievementJson = responseBody['data'];
+      return achievementJson.map((json) => Achievement.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load topics');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,292 +55,92 @@ class _LeaderBoardsState extends State<LeaderBoards> {
         elevation: 0,
         backgroundColor: Colors.white,
         centerTitle: true,
-        title: Text('Leaderboards', style: TextStyle(
+        title: Text('Achievement', style: TextStyle(
           color: Colors.black, fontSize: 17
         )),
       ),
       body: SafeArea(
-        child: ListView.builder(
-          scrollDirection: Axis.vertical,
-          itemCount: listMLB.length,
-          itemBuilder: (context, index) {
-            return Container(
-              child: index == 0 ?
-              GestureDetector(
-                onTap: ()async{
-                  await showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        content: Container(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              listMLB[index]['photo_user'] == "" ?
-                              ClipRRect(
-                                  borderRadius: BorderRadius.circular(100),
-                                  child: Image.asset(
-                                    'assets/avatar.png',
-                                    height: 80,
-                                    width: 80,)
-                              ) :
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(100),
-                                child: Image.network(
-                                  '${listMLB[index]['photo_user']}',
-                                  fit: BoxFit.cover,
-                                  height: 80,
-                                  width: 80,),
-                              ),
-                              SizedBox(height: 5,),
-                              Text('${listMLB[index]['name_user']}', style: TextStyle(color: Colors.lightBlue, fontSize: 17),),
-                              SizedBox(height: 10,),
-                              listMLB[index]['badge'].length != 0 ? GridView.builder(
-                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 5,
-                                      mainAxisSpacing: 4.0,
-                                      crossAxisSpacing: 9
-                                  ),
-                                  itemCount: listMLB[index]['badge'].length,
-                                  shrinkWrap: true,
-                                  itemBuilder: (context, indexBadge) {
-                                    return Container(
-                                      child: Column(
-                                        children: [
-                                          ClipRRect(
-                                            borderRadius: BorderRadius.circular(100),
-                                            child: Image.network(
-                                              '${listMLB[index]['badge'][indexBadge]['badge_image']}',
-                                              fit: BoxFit.cover, height: 30, width: 30,),
-                                          )
-                                        ],
-                                      ),
-                                    );
-                                  }) : Container(child: Text('No badge yet'),),
-                            ],
+        child: FutureBuilder<List<Achievement>>(
+          future: futureAchievement,
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              List<Achievement> achievements = snapshot.data!;
+              return ListView.builder(
+                scrollDirection: Axis.vertical,
+                itemCount: achievements.length,
+                itemBuilder: (context, index) {
+                  Achievement achievement = achievements[index];
+                  return GestureDetector(
+                    onTap: () async {
+                      await showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          content: Container(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text('${achievement.topic.topicName}', style: TextStyle(color: Colors.black, fontSize: 17),),
+                                SizedBox(height: 10,),
+                                Text('Rank: ${achievement.rank}', style: TextStyle(color: Colors.black, fontSize: 17)),
+                                SizedBox(height: 10,),
+                                Text('Category: ${achievement.category}', style: TextStyle(color: Colors.black, fontSize: 17)),
+                                SizedBox(height: 10,),
+                                Text('Achievement: ${achievement.achievement}', style: TextStyle(color: Colors.lightBlue, fontSize: 17),),
+                              ],
+                            ),
                           ),
-                        ),
-                        actions: [
-                          TextButton(
+                          actions: [
+                            TextButton(
                               onPressed: () => Navigator.pop(context),
                               child: Text('Close', style: TextStyle(color: Colors.red, fontSize: 14),))
+                          ],
+                        ));
+                    },
+                    child: Container(
+                      margin: EdgeInsets.only(right: 10, left: 10, top: 5),
+                      child: Row(
+                        children: [
+                          Text('${index+1}', style: TextStyle(color: Colors.black, fontSize: 17),),
+                          SizedBox(width: 10,),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(100),
+                            child: Image.asset(
+                              'assets/cup.png',
+                              height: 60,
+                              width: 60,
+                            ),
+                          ),
+                          SizedBox(width: 10,),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('${achievement.topic.topicName}', style: TextStyle(color: Colors.black, fontSize: 17),),
+                                Text('Rank: ${achievement.rank}', style: TextStyle(color: Colors.black, fontSize: 17)),
+                                Text('Category: ${achievement.category}', style: TextStyle(color: Colors.black, fontSize: 17)),
+                              ],
+                            ),
+                          ),
+                          SizedBox(width: 7,),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: Text('${achievement.achievement}', style: TextStyle(color: Colors.lightBlue, fontSize: 17),),
+                          ),
                         ],
-                      ));
-                },
-                child: Container(
-                  padding: EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.blueGrey,
-                    borderRadius: BorderRadius.only(
-                      bottomRight: Radius.circular(4),
-                      bottomLeft: Radius.circular(4)
-                    )
-                  ),
-                  child: Align(
-                    alignment: Alignment.center,
-                    child: Column(
-                      children: [
-                        Stack(
-                          children: [
-                            Center(
-                              child: listMLB[index]['photo_user'] == "" ? ClipRRect(
-                                borderRadius: BorderRadius.circular(100),
-                                child: Image.asset(
-                                    'assets/avatar.png',
-                                  fit: BoxFit.cover,
-                                  width: 130,
-                                  height: 130,),
-                              ) : ClipRRect(
-                                borderRadius: BorderRadius.circular(100),
-                                child: Image.network(
-                                  '${listMLB[index]['photo_user']}',
-                                  fit: BoxFit.cover,
-                                  height: 130,
-                                  width: 130,
-                                ),
-                              ),
-                            ),
-                            Center(
-                              child: Container(
-                                margin: EdgeInsets.only(top: 110, left: 60),
-                                width: 30,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(5),
-                                  child: Text(
-                                      '${index+1}', style: TextStyle(
-                                      color: Colors.white, fontSize: 17),
-                                    textAlign: TextAlign.center,),
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(100),
-                                  color: Colors.blue
-                                ),
-                              ),
-                            )
-                          ],
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text('${listMLB[index]['name_user']}', style: TextStyle(
-                              color: Colors.white, fontSize: 24
-                            ),),
-                            Text(' (${listMLB[index]['score']}) ', style: TextStyle(
-                                color: Colors.orange, fontSize: 24
-                            ),),
-                          ],
-                        ),
-                        listMLB[index]['badge'].length != 0 ? GridView.builder(
-                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 5,
-                                mainAxisSpacing: 4.0,
-                                crossAxisSpacing: 9
-                            ),
-                            itemCount: listMLB[index]['badge'].length,
-                            shrinkWrap: true,
-                            itemBuilder: (context, indexBadge) {
-                              return Container(
-                                child: Column(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(100),
-                                      child: Image.network(
-                                        '${listMLB[index]['badge'][indexBadge]['badge_image']}',
-                                        fit: BoxFit.cover, height: 30, width: 30,),
-                                    )
-                                  ],
-                                ),
-                              );
-                            }) : Container(child: Text('No badge yet', style: TextStyle(
-                          color: Colors.white, fontSize: 17
-                        ),),),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-              ) :
-              GestureDetector(
-                onTap: () async {
-                  await showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        content: Container(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              listMLB[index]['photo_user'] == "" ?
-                              ClipRRect(
-                                  borderRadius: BorderRadius.circular(100),
-                                  child: Image.asset(
-                                    'assets/avatar.png',
-                                    height: 80,
-                                    width: 80,)
-                              ) :
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(100),
-                                child: Image.network(
-                                  '${listMLB[index]['photo_user']}',
-                                  fit: BoxFit.cover,
-                                  height: 80,
-                                  width: 80,),
-                              ),
-                              SizedBox(height: 5,),
-                              Text('${listMLB[index]['name_user']}', style: TextStyle(color: Colors.lightBlue, fontSize: 17),),
-                              SizedBox(height: 10,),
-                              listMLB[index]['badge'].length != 0 ? GridView.builder(
-                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 5,
-                                      mainAxisSpacing: 4.0,
-                                      crossAxisSpacing: 9
-                                  ),
-                                  itemCount: listMLB[index]['badge'].length,
-                                  shrinkWrap: true,
-                                  itemBuilder: (context, indexBadge) {
-                                    return Container(
-                                      child: Column(
-                                        children: [
-                                          ClipRRect(
-                                            borderRadius: BorderRadius.circular(100),
-                                            child: Image.network(
-                                              '${listMLB[index]['badge'][indexBadge]['badge_image']}',
-                                              fit: BoxFit.cover, height: 30, width: 30,),
-                                          )
-                                        ],
-                                      ),
-                                    );
-                                  }) : Container(child: Text('No badge yet'),),
-                            ],
-                          ),
-                        ),
-                        actions: [
-                          TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: Text('Close', style: TextStyle(color: Colors.red, fontSize: 14),))
-                        ],
-                      ));
+                  );
                 },
-                child: Container(
-                  margin: EdgeInsets.only(right: 10, left: 10, top: 5),
-                  child: Row(
-                    children: [
-                      Text('${index+1}', style: TextStyle(color: Colors.black, fontSize: 17),),
-                      SizedBox(width: 10,),
-                      listMLB[index]['photo_user'] == "" ?
-                      ClipRRect(
-                          borderRadius: BorderRadius.circular(100),
-                          child: Image.asset(
-                            'assets/avatar.png',
-                            height: 60,
-                            width: 60,)
-                      ) :
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(100),
-                        child: Image.network(
-                          '${listMLB[index]['photo_user']}',
-                          fit: BoxFit.cover,
-                          height: 60,
-                          width: 60,),
-                      ),
-                      SizedBox(width: 10,),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('${listMLB[index]['name_user']}', style: TextStyle(color: Colors.black, fontSize: 17),),
-                            listMLB[index]['badge'].length != 0 ? GridView.builder(
-                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 5,
-                                    mainAxisSpacing: 4.0,
-                                    crossAxisSpacing: 9
-                                ),
-                                itemCount: listMLB[index]['badge'].length,
-                                shrinkWrap: true,
-                                itemBuilder: (context, indexBadge) {
-                                  return Container(
-                                    child: Column(
-                                      children: [
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(100),
-                                          child: Image.network(
-                                            '${listMLB[index]['badge'][indexBadge]['badge_image']}',
-                                            fit: BoxFit.cover, height: 30, width: 30,),
-                                        )
-                                      ],
-                                    ),
-                                  );
-                                }) : Container(child: Text('No badge yet'),),
-                          ],
-                        ),
-                      ),
-                      SizedBox(width: 7,),
-                      Align(
-                          alignment: Alignment.centerRight,
-                          child: Text('${listMLB[index]['score']}', style: TextStyle(color: Colors.lightBlue, fontSize: 17),)),
-                    ],
-                  ),
-                ),
-              ),
+              );
+            } else if (snapshot.hasError) {
+              return Center(
+                child: Text("${snapshot.error}"),
+              );
+            }
+            return Center(
+              child: CircularProgressIndicator(),
             );
-          }
+          },
         ),
       ),
     );
