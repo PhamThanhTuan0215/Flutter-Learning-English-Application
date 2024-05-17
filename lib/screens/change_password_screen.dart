@@ -1,11 +1,14 @@
 import 'dart:convert';
 
+import 'package:application_learning_english/loading_overlay.dart';
+import 'package:application_learning_english/toastify/account.dart';
 import 'package:application_learning_english/user.dart';
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:application_learning_english/config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:toastification/toastification.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -21,6 +24,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   late SharedPreferences prefs;
   bool _isNotValidate = false;
   late User user;
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -42,17 +46,48 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     if (_currentPasswordController.text.isNotEmpty &&
         _newPasswordController.text.isNotEmpty &&
         _confirmPasswordController.text.isNotEmpty) {
-      var reqBody = {
-        '_id': user.uid,
-        'oldPassword': _currentPasswordController.text,
-        'newPassword': _newPasswordController.text
-      };
-      var res = await http.post(Uri.parse(url + '/accounts/changePassword'));
+      if (_newPasswordController.text == _confirmPasswordController.text) {
+        setState(() {
+          isLoading = true;
+        });
+        var reqBody = {
+          '_id': user.uid,
+          'oldPassword': _currentPasswordController.text,
+          'newPassword': _newPasswordController.text
+        };
+        var res = await http.post(
+            Uri.parse(ANDROID_URL + '/accounts/changePassword'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(reqBody));
 
-      var jsonResponse = jsonDecode(res.body);
+        var jsonResponse = jsonDecode(res.body);
+
+        setState(() {
+          isLoading = false;
+        });
+
+        if (jsonResponse['code'] == 0) {
+          showSuccessToast(
+              context: context,
+              title: 'Success',
+              description: 'Change password successfully!');
+          Navigator.pop(context);
+        } else {
+          showErrorToast(
+              context: context,
+              title: 'Error',
+              description: jsonResponse['message']);
+        }
+      } else {
+        showErrorToast(
+            context: context,
+            title: 'Error',
+            description: 'Password and confirm password not match!');
+      }
     } else {
       setState(() {
         _isNotValidate = true;
+        isLoading = false;
       });
     }
   }
@@ -88,63 +123,67 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(30),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Change Password",
-                style: TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 40),
-              EditItem(
-                title: "Current Password",
-                widget: TextField(
-                  controller: _currentPasswordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'Current Password',
-                    errorStyle: TextStyle(color: Colors.red),
-                    errorText: _isNotValidate ? "Enter current password" : null,
+      body: LoadingOverlay(
+        isLoading: isLoading,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(30),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Change Password",
+                  style: TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-              const SizedBox(height: 40),
-              EditItem(
-                title: "New Password",
-                widget: TextField(
-                  controller: _newPasswordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'New Password',
-                    errorStyle: TextStyle(color: Colors.red),
-                    errorText: _isNotValidate ? "Enter new password" : null,
+                const SizedBox(height: 40),
+                EditItem(
+                  title: "Current Password",
+                  widget: TextField(
+                    controller: _currentPasswordController,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Current Password',
+                      errorStyle: TextStyle(color: Colors.red),
+                      errorText:
+                          _isNotValidate ? "Enter current password" : null,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 40),
-              EditItem(
-                title: "Confirm New Password",
-                widget: TextField(
-                  controller: _confirmPasswordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'Confirm New Password',
-                    errorStyle: TextStyle(color: Colors.red),
-                    errorText:
-                        _isNotValidate ? "Enter confirm new password" : null,
+                const SizedBox(height: 40),
+                EditItem(
+                  title: "New Password",
+                  widget: TextField(
+                    controller: _newPasswordController,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'New Password',
+                      errorStyle: TextStyle(color: Colors.red),
+                      errorText: _isNotValidate ? "Enter new password" : null,
+                    ),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 40),
+                EditItem(
+                  title: "Confirm New Password",
+                  widget: TextField(
+                    controller: _confirmPasswordController,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Confirm New Password',
+                      errorStyle: TextStyle(color: Colors.red),
+                      errorText:
+                          _isNotValidate ? "Enter confirm new password" : null,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

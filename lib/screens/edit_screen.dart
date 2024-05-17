@@ -1,6 +1,10 @@
-import 'package:application_learning_english/widgets/edit_item.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../user.dart';
+import '../widgets/edit_item.dart';
 
 class EditAccountScreen extends StatefulWidget {
   const EditAccountScreen({super.key});
@@ -11,6 +15,51 @@ class EditAccountScreen extends StatefulWidget {
 
 class _EditAccountScreenState extends State<EditAccountScreen> {
   String gender = "man";
+  late TextEditingController _nameController;
+  late TextEditingController _usernameController;
+  late TextEditingController _ageController;
+  late TextEditingController _emailController;
+
+  late SharedPreferences prefs;
+  User? user;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController();
+    _usernameController = TextEditingController();
+    _ageController = TextEditingController();
+    _emailController = TextEditingController();
+    getUserData();
+  }
+
+  void getUserData() async {
+    prefs = await SharedPreferences.getInstance();
+    String? userJson = prefs.getString('user');
+    if (userJson != null) {
+      Map<String, dynamic> userMap = jsonDecode(userJson);
+      setState(() {
+        user = User.fromJson(userMap);
+        _nameController.text = user!.fullName;
+        _usernameController.text = user!.username;
+        _emailController.text = user!.email;
+        // gender = user!.gender;
+      });
+    }
+  }
+
+  void saveUserData() async {
+    // if (user != null) {
+    //   user.fullName = _nameController.text;
+    //   // user!.age = int.tryParse(_ageController.text) ?? user!.age;
+    //   user!.email = _emailController.text;
+    //   // user!.gender = gender;
+
+    //   String userJson = jsonEncode(user!.toJson());
+    //   await prefs.setString('user', userJson);
+    //   Navigator.pop(context); // Trở lại màn hình trước đó
+    // }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +76,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 10),
             child: IconButton(
-              onPressed: () {},
+              onPressed: saveUserData,
               style: IconButton.styleFrom(
                 backgroundColor: Colors.lightBlueAccent,
                 shape: RoundedRectangleBorder(
@@ -36,7 +85,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
                 fixedSize: Size(60, 50),
                 elevation: 3,
               ),
-              icon: Icon(Ionicons.checkmark, color: Colors.white),
+              icon: const Icon(Ionicons.checkmark, color: Colors.white),
             ),
           ),
         ],
@@ -70,70 +119,31 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
                         foregroundColor: Colors.lightBlueAccent,
                       ),
                       child: const Text("Upload Image"),
-                    )
+                    ),
                   ],
                 ),
               ),
-              const EditItem(
+              EditItem(
                 title: "Name",
-                widget: TextField(),
+                widget: TextField(
+                  controller: _nameController,
+                ),
               ),
               const SizedBox(height: 40),
               EditItem(
-                title: "Gender",
-                widget: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        setState(() {
-                          gender = "man";
-                        });
-                      },
-                      style: IconButton.styleFrom(
-                        backgroundColor: gender == "man"
-                            ? Colors.deepPurple
-                            : Colors.grey.shade200,
-                        fixedSize: const Size(50, 50),
-                      ),
-                      icon: Icon(
-                        Ionicons.male,
-                        color: gender == "man" ? Colors.white : Colors.black,
-                        size: 18,
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    IconButton(
-                      onPressed: () {
-                        setState(() {
-                          gender = "woman";
-                        });
-                      },
-                      style: IconButton.styleFrom(
-                        backgroundColor: gender == "woman"
-                            ? Colors.deepPurple
-                            : Colors.grey.shade200,
-                        fixedSize: const Size(50, 50),
-                      ),
-                      icon: Icon(
-                        Ionicons.female,
-                        color: gender == "woman" ? Colors.white : Colors.black,
-                        size: 18,
-                      ),
-                    )
-                  ],
-                ),
-              ),
-              const SizedBox(height: 40),
-              const EditItem(
+                title: "Username",
                 widget: TextField(
-                  keyboardType: TextInputType.number,
+                  controller: _usernameController,
+                  readOnly: true,
                 ),
-                title: "Age",
               ),
               const SizedBox(height: 40),
-              const EditItem(
-                widget: TextField(),
+              EditItem(
                 title: "Email",
+                widget: TextField(
+                  controller: _emailController,
+                  readOnly: true,
+                ),
               ),
             ],
           ),
