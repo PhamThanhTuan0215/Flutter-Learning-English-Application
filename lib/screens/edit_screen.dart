@@ -125,7 +125,9 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
               ),
               const SizedBox(height: 40),
               const EditItem(
-                widget: TextField(),
+                widget: TextField(
+                  keyboardType: TextInputType.number,
+                ),
                 title: "Age",
               ),
               const SizedBox(height: 40),

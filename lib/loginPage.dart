@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:application_learning_english/forgotPassword.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -7,6 +6,7 @@ import 'config.dart';
 import 'Homepage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'loading_overlay.dart';
+import 'user.dart';
 
 class MyLogin extends StatefulWidget {
   const MyLogin({Key? key}) : super(key: key);
@@ -31,9 +31,14 @@ class _MyLoginState extends State<MyLogin> {
 
   void initSharedPref() async {
     prefs = await SharedPreferences.getInstance();
-    setState(() {
-      emailController.text = (prefs.getString('email') ?? '');
-    });
+    String? userJson = prefs.getString('user');
+    if (userJson != null) {
+      Map<String, dynamic> userMap = jsonDecode(userJson);
+      User user = User.fromJson(userMap);
+      setState(() {
+        emailController.text = user.email;
+      });
+    }
   }
 
   void loginUser() async {
@@ -58,6 +63,15 @@ class _MyLoginState extends State<MyLogin> {
       if (jsonResponse['code'] == 0) {
         var myToken = jsonResponse['data']['token'];
         prefs.setString('token', myToken);
+        User user = User(
+            uid: jsonResponse['data']['_id'],
+            username: jsonResponse['data']['username'],
+            fullName: jsonResponse['data']['fullName'],
+            email: jsonResponse['data']['email'],
+            avatar: jsonResponse['data']['avatar_url'] ??
+                'https://firebasestorage.googleapis.com/v0/b/phone-c4bc5.appspot.com/o/default_avatar.jpg?alt=media&token=0ff85744-9209-457b-aaf8-66d1f6893155');
+        String userJson = jsonEncode(user.toJson());
+        await prefs.setString('user', userJson);
         Navigator.push(
             context, MaterialPageRoute(builder: (context) => HomeScreen()));
       } else {
