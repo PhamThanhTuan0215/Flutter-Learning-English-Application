@@ -31,6 +31,9 @@ class _MyLoginState extends State<MyLogin> {
 
   void initSharedPref() async {
     prefs = await SharedPreferences.getInstance();
+    setState(() {
+      emailController.text = (prefs.getString('email') ?? '');
+    });
   }
 
   void loginUser() async {
