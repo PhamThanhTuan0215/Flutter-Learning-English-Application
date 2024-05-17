@@ -235,36 +235,34 @@ class _WordItemState extends State<WordItem> {
               fontSize: 18.0,
             ),
           ),
-          trailing: widget.isEnableEdit
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        widget.word.isStarred ? Icons.star : Icons.star_border,
-                        color: widget.word.isStarred
-                            ? Colors.yellow[700]
-                            : Colors.grey,
-                      ),
-                      onPressed: () {
-                        toggleMarkWord();
-                      },
-                    ),
-                    SizedBox(
-                      width: 40.0,
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.delete,
-                        color: Colors.red,
-                      ),
-                      onPressed: () {
-                        confirmRemove();
-                      },
-                    ),
-                  ],
-                )
-              : null,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: Icon(
+                  widget.word.isStarred ? Icons.star : Icons.star_border,
+                  color:
+                      widget.word.isStarred ? Colors.yellow[700] : Colors.grey,
+                ),
+                onPressed: () {
+                  toggleMarkWord();
+                },
+              ),
+              SizedBox(
+                width: 40.0,
+              ),
+              if (widget.isEnableEdit)
+                IconButton(
+                  icon: Icon(
+                    Icons.delete,
+                    color: Colors.red,
+                  ),
+                  onPressed: () {
+                    confirmRemove();
+                  },
+                ),
+            ],
+          ),
         ),
       ),
     );

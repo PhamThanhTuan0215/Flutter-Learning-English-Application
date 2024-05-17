@@ -10,10 +10,12 @@ import 'package:http/http.dart' as http;
 
 class TopicItem extends StatefulWidget {
   Topic topic;
+  String username;
 
   TopicItem({
     Key? key,
     required this.topic,
+    required this.username,
   }) : super(key: key);
 
   @override
@@ -31,9 +33,7 @@ class _TopicItemState extends State<TopicItem> {
     super.initState();
     fetchVocabulary();
 
-    String username = 'thanhtuan'; // THAY CÁI NÀY BẰNG USERNAME LẤY TỪ SESSION
-
-    if (widget.topic.owner == username) {
+    if (widget.topic.owner == widget.username) {
       isEnableEdit = true;
     }
   }
@@ -41,7 +41,7 @@ class _TopicItemState extends State<TopicItem> {
   Future<void> fetchVocabulary() async {
     try {
       var response = await http.get(
-          Uri.parse('${urlRoot}/topics/${widget.topic.id}/words/thanhtuan'));
+          Uri.parse('${urlRoot}/topics/${widget.topic.id}/words/${widget.username}'));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -95,7 +95,7 @@ class _TopicItemState extends State<TopicItem> {
           context,
           MaterialPageRoute(
             builder: (context) => ListVocabularyScreen(
-                topic: widget.topic, words: words, isEnableEdit: isEnableEdit),
+                topic: widget.topic, words: words, isEnableEdit: isEnableEdit, username: widget.username,),
           ),
         );
 
@@ -133,7 +133,7 @@ class _TopicItemState extends State<TopicItem> {
                 ],
               ),
               SizedBox(height: 5),
-              if (!widget.topic.isPublic || isEnableEdit)
+              if (isEnableEdit)
                 Row(
                   children: [
                     Icon(Icons.timeline, color: Colors.green),

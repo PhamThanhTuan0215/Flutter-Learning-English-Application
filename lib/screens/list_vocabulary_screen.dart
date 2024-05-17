@@ -12,12 +12,14 @@ class ListVocabularyScreen extends StatefulWidget {
   final List<Word> words;
   final Topic topic;
   final bool isEnableEdit;
+  final String username;
 
   const ListVocabularyScreen({
     Key? key,
     required this.words,
     required this.topic,
     required this.isEnableEdit,
+    required this.username,
   }) : super(key: key);
 
   @override
@@ -142,7 +144,8 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
   Future<void> addWords(listWord) async {
     try {
       var response = await http.post(
-          Uri.parse('${urlRoot}/topics/${widget.topic.id}/add-words/thanhtuan'),
+          Uri.parse(
+              '${urlRoot}/topics/${widget.topic.id}/add-words/${widget.username}'),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
           },
@@ -193,23 +196,24 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
         ),
         title: Center(child: Text('Vocabulary List')),
         actions: [
-          if(widget.isEnableEdit) Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: SizedBox(
-              width: 40,
-              height: 40,
-              child: IconButton(
-                onPressed: () {
-                  _addVocabularyDialog();
-                },
-                icon: Icon(
-                  Icons.add_circle_outline,
-                  size: 30,
-                  color: Color.fromARGB(255, 33, 44, 204),
+          if (widget.isEnableEdit)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: SizedBox(
+                width: 40,
+                height: 40,
+                child: IconButton(
+                  onPressed: () {
+                    _addVocabularyDialog();
+                  },
+                  icon: Icon(
+                    Icons.add_circle_outline,
+                    size: 30,
+                    color: Color.fromARGB(255, 33, 44, 204),
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
       body: Container(
@@ -220,10 +224,9 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
             itemCount: widget.words.length,
             itemBuilder: (context, index) {
               return WordItem(
-                word: widget.words[index],
-                onDelete: deleteWord,
-                isEnableEdit: widget.isEnableEdit
-              );
+                  word: widget.words[index],
+                  onDelete: deleteWord,
+                  isEnableEdit: widget.isEnableEdit);
             },
           ),
         ),
