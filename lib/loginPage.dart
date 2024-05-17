@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:application_learning_english/forgotPassword.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'config.dart';
@@ -33,6 +34,9 @@ class _MyLoginState extends State<MyLogin> {
   }
 
   void loginUser() async {
+    setState(() {
+      _isLoading = true;
+    });
     if (emailController.text.isNotEmpty && passwordController.text.isNotEmpty) {
       var reqBody = {
         'email': emailController.text,
@@ -177,7 +181,13 @@ class _MyLoginState extends State<MyLogin> {
                                   style: ButtonStyle(),
                                 ),
                                 TextButton(
-                                    onPressed: () {},
+                                    onPressed: () {
+                                      Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  ForgotPassword()));
+                                    },
                                     child: Text(
                                       'Forgot Password',
                                       style: TextStyle(

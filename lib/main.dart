@@ -1,9 +1,12 @@
+import "package:application_learning_english/flashCard.dart";
+import "package:application_learning_english/forgotPassword.dart";
 import "package:application_learning_english/loginPage.dart";
 import "package:application_learning_english/registration.dart";
 import "package:flutter/material.dart";
 import "package:jwt_decoder/jwt_decoder.dart";
 import "package:shared_preferences/shared_preferences.dart";
 import 'Homepage.dart';
+import 'profile.dart';
 
 // void main() async {
 //   runApp(MaterialApp(
@@ -40,7 +43,7 @@ class MyApp extends StatelessWidget {
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
         home: (token != null && JwtDecoder.isExpired(token) == false)
-            ? HomeScreen()
+            ? FlashCard()
             : MyLogin());
   }
 }

@@ -38,6 +38,8 @@ dependencies:
     websafe_svg: ^3.0.1+1
     shared_preferences: ^2.2.3
     jwt_decoder: ^2.0.1
+    flip_card: ^0.7.0
+    font_awesome_flutter: ^10.7.0
 
 dev_dependencies:
     flutter_test:
