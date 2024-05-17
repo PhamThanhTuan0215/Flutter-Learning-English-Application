@@ -1,12 +1,13 @@
+import 'package:application_learning_english/loginPage.dart';
 import 'package:application_learning_english/screens/change_password_screen.dart';
 import 'package:application_learning_english/screens/edit_screen.dart';
 import 'package:application_learning_english/screens/leaderboards.dart';
 import 'package:application_learning_english/widgets/forward_button.dart';
 import 'package:application_learning_english/widgets/setting_item.dart';
 import 'package:application_learning_english/widgets/setting_logout.dart';
-import 'package:application_learning_english/widgets/setting_switch.dart';
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -16,6 +17,12 @@ class AccountScreen extends StatefulWidget {
 }
 
 class _AccountScreenState extends State<AccountScreen> {
+  void logOutUser() async {
+    print('hi');
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    Navigator.push(context, MaterialPageRoute(builder: (context) => MyLogin()));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -141,7 +148,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 icon: Ionicons.log_out,
                 bgColor: Colors.red.shade100,
                 iconColor: Colors.red,
-                onTap: () {},
+                onTap: logOutUser,
               ),
             ],
           ),

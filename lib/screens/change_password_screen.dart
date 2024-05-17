@@ -1,5 +1,11 @@
+import 'dart:convert';
+
+import 'package:application_learning_english/user.dart';
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
+import 'package:application_learning_english/config.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -12,6 +18,44 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  late SharedPreferences prefs;
+  bool _isNotValidate = false;
+  late User user;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    initGetDataUser();
+  }
+
+  void initGetDataUser() async {
+    prefs = await SharedPreferences.getInstance();
+    String? userJson = prefs.getString('user');
+    if (userJson != null) {
+      Map<String, dynamic> userMap = jsonDecode(userJson);
+      user = User.fromJson(userMap);
+    }
+  }
+
+  void changePassword() async {
+    if (_currentPasswordController.text.isNotEmpty &&
+        _newPasswordController.text.isNotEmpty &&
+        _confirmPasswordController.text.isNotEmpty) {
+      var reqBody = {
+        '_id': user.uid,
+        'oldPassword': _currentPasswordController.text,
+        'newPassword': _newPasswordController.text
+      };
+      var res = await http.post(Uri.parse(url + '/accounts/changePassword'));
+
+      var jsonResponse = jsonDecode(res.body);
+    } else {
+      setState(() {
+        _isNotValidate = true;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +73,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             padding: const EdgeInsets.only(right: 10),
             child: IconButton(
               onPressed: () {
-                // Implement your password change logic here
+                changePassword();
               },
               style: IconButton.styleFrom(
                 backgroundColor: Colors.lightBlueAccent,
@@ -66,6 +110,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   decoration: InputDecoration(
                     border: OutlineInputBorder(),
                     labelText: 'Current Password',
+                    errorStyle: TextStyle(color: Colors.red),
+                    errorText: _isNotValidate ? "Enter current password" : null,
                   ),
                 ),
               ),
@@ -78,6 +124,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   decoration: InputDecoration(
                     border: OutlineInputBorder(),
                     labelText: 'New Password',
+                    errorStyle: TextStyle(color: Colors.red),
+                    errorText: _isNotValidate ? "Enter new password" : null,
                   ),
                 ),
               ),
@@ -90,6 +138,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   decoration: InputDecoration(
                     border: OutlineInputBorder(),
                     labelText: 'Confirm New Password',
+                    errorStyle: TextStyle(color: Colors.red),
+                    errorText:
+                        _isNotValidate ? "Enter confirm new password" : null,
                   ),
                 ),
               ),

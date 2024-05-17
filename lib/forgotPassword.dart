@@ -4,8 +4,6 @@ import 'package:application_learning_english/loginPage.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'config.dart';
-import 'Homepage.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'loading_overlay.dart';
 
 class ForgotPassword extends StatefulWidget {
@@ -19,6 +17,12 @@ class _ForgotPasswordState extends State<ForgotPassword> {
   TextEditingController emailController = TextEditingController();
   bool _isNotValidate = false;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
 
   void resetPassword() async {
     setState(() {
