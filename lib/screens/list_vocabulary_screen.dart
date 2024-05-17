@@ -13,12 +13,14 @@ class ListVocabularyScreen extends StatefulWidget {
   final List<Word> words;
   final Topic topic;
   final bool isEnableEdit;
+  final String username;
 
   const ListVocabularyScreen({
     Key? key,
     required this.words,
     required this.topic,
     required this.isEnableEdit,
+    required this.username,
   }) : super(key: key);
 
   @override
@@ -143,7 +145,8 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
   Future<void> addWords(listWord) async {
     try {
       var response = await http.post(
-          Uri.parse('${urlRoot}/topics/${widget.topic.id}/add-words/thanhtuan'),
+          Uri.parse(
+              '${urlRoot}/topics/${widget.topic.id}/add-words/${widget.username}'),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
           },

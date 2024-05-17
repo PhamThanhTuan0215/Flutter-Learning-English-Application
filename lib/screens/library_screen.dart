@@ -1,13 +1,16 @@
 import 'dart:convert';
 import 'package:application_learning_english/config.dart';
 import 'package:application_learning_english/models/topic.dart';
+import 'package:application_learning_english/user.dart';
 import 'package:application_learning_english/widgets/topic_item.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LibraryScreen extends StatefulWidget {
-  const LibraryScreen({super.key});
+  String username;
+  LibraryScreen({super.key, required this.username});
 
   @override
   State<LibraryScreen> createState() => _LibraryScreenState();
@@ -31,8 +34,8 @@ class _LibraryScreenState extends State<LibraryScreen>
 
   Future<void> fetchTopics() async {
     try {
-      var response =
-          await http.get(Uri.parse('${urlRoot}/topics/library/thanhtuan'));
+      var response = await http
+          .get(Uri.parse('${urlRoot}/topics/library/${widget.username}'));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -123,10 +126,11 @@ class _LibraryScreenState extends State<LibraryScreen>
                 children: [
                   Opacity(
                       opacity: isSearching ? 0.0 : 1.0,
-                      child: buildTopicSections(topics, selectedFilter)),
+                      child: buildTopicSections(
+                          topics, selectedFilter, widget.username)),
                   Opacity(
                     opacity: isSearching ? 1.0 : 0.0,
-                    child: buildSearchTopics(searchTopics),
+                    child: buildSearchTopics(searchTopics, widget.username),
                   ),
                 ],
               )
@@ -156,11 +160,11 @@ class _LibraryScreenState extends State<LibraryScreen>
   }
 }
 
-Widget buildSearchTopics(topics) {
-  return buildSection('Result search', topics);
+Widget buildSearchTopics(topics, username) {
+  return buildSection('Result search', topics, username);
 }
 
-Widget buildTopicSections(topics, selectedFilter) {
+Widget buildTopicSections(topics, selectedFilter, username) {
   Map<String, List<Topic>> categorizedTopics = {
     'Today': [],
     'Yesterday': [],
@@ -198,27 +202,29 @@ Widget buildTopicSections(topics, selectedFilter) {
     children: [
       if (categorizedTopics['Today']!.length > 0 &&
           (selectedFilter == 'Today' || selectedFilter == 'All'))
-        buildSection('Today', categorizedTopics['Today']!),
+        buildSection('Today', categorizedTopics['Today']!, username),
       if (categorizedTopics['Yesterday']!.length > 0 &&
           (selectedFilter == 'Yesterday' || selectedFilter == 'All'))
-        buildSection('Yesterday', categorizedTopics['Yesterday']!),
+        buildSection('Yesterday', categorizedTopics['Yesterday']!, username),
       if (categorizedTopics['During 7 days']!.length > 0 &&
           (selectedFilter == 'During 7 days' || selectedFilter == 'All'))
-        buildSection('During 7 days', categorizedTopics['During 7 days']!),
+        buildSection(
+            'During 7 days', categorizedTopics['During 7 days']!, username),
       if (categorizedTopics['This Month']!.length > 0 &&
           (selectedFilter == 'This Month' || selectedFilter == 'All'))
-        buildSection('This Month', categorizedTopics['This Month']!),
+        buildSection('This Month', categorizedTopics['This Month']!, username),
       if (categorizedTopics['This Year']!.length > 0 &&
           (selectedFilter == 'This Year' || selectedFilter == 'All'))
-        buildSection('This Year', categorizedTopics['This Year']!),
+        buildSection('This Year', categorizedTopics['This Year']!, username),
       if (categorizedTopics['More This Year']!.length > 0 &&
           selectedFilter == 'All')
-        buildSection('More This Year', categorizedTopics['More This Year']!),
+        buildSection(
+            'More This Year', categorizedTopics['More This Year']!, username),
     ],
   );
 }
 
-Widget buildSection(String title, List<Topic> topics) {
+Widget buildSection(String title, List<Topic> topics, String username) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -237,6 +243,7 @@ Widget buildSection(String title, List<Topic> topics) {
         itemBuilder: (context, index) {
           return TopicItem(
             topic: topics[index],
+            username: username,
           );
         },
       ),
