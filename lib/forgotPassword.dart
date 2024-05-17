@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:application_learning_english/loginPage.dart';
 import 'package:application_learning_english/toastify/account.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'config.dart';
@@ -15,6 +16,8 @@ class ForgotPassword extends StatefulWidget {
 }
 
 class _ForgotPasswordState extends State<ForgotPassword> {
+  final urlRoot = kIsWeb ? WEB_URL : ANDROID_URL;
+
   TextEditingController emailController = TextEditingController();
   bool _isNotValidate = false;
   bool _isLoading = false;
@@ -34,7 +37,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
         'email': emailController.text,
       };
 
-      var res = await http.post(Uri.parse(reset),
+      var res = await http.post(Uri.parse(urlRoot + '/accounts/reset'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode(reqBody));
 

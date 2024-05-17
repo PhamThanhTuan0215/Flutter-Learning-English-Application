@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:application_learning_english/forgotPassword.dart';
 import 'package:application_learning_english/toastify/account.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'config.dart';
@@ -17,6 +18,8 @@ class MyLogin extends StatefulWidget {
 }
 
 class _MyLoginState extends State<MyLogin> {
+  final urlRoot = kIsWeb ? WEB_URL : ANDROID_URL;
+
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   bool _isNotValidate = false;
@@ -52,7 +55,7 @@ class _MyLoginState extends State<MyLogin> {
         'password': passwordController.text,
       };
 
-      var res = await http.post(Uri.parse(login),
+      var res = await http.post(Uri.parse(urlRoot + '/accounts/login'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode(reqBody));
 

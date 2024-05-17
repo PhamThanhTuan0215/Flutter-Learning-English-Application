@@ -42,6 +42,7 @@ dependencies:
     font_awesome_flutter: ^10.7.0
     flip_card: ^0.7.0
     toastification:
+    page_transition: ^2.0.9
 dev_dependencies:
     flutter_test:
         sdk: flutter

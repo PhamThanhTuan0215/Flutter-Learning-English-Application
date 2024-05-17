@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'config.dart';
@@ -12,6 +13,8 @@ class MyRegister extends StatefulWidget {
 }
 
 class _MyRegisterState extends State<MyRegister> {
+  final urlRoot = kIsWeb ? WEB_URL : ANDROID_URL;
+
   TextEditingController nameController = TextEditingController();
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
@@ -32,7 +35,7 @@ class _MyRegisterState extends State<MyRegister> {
         'password': passwordController.text
       };
 
-      var res = await http.post(Uri.parse(registration),
+      var res = await http.post(Uri.parse(urlRoot + '/accounts/register'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode(reqBody));
 

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:application_learning_english/loading_overlay.dart';
 import 'package:application_learning_english/toastify/account.dart';
 import 'package:application_learning_english/user.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:application_learning_english/config.dart';
@@ -18,6 +19,8 @@ class ChangePasswordScreen extends StatefulWidget {
 }
 
 class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
+  final urlRoot = kIsWeb ? WEB_URL : ANDROID_URL;
+
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -56,7 +59,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           'newPassword': _newPasswordController.text
         };
         var res = await http.post(
-            Uri.parse(ANDROID_URL + '/accounts/changePassword'),
+            Uri.parse(urlRoot + '/accounts/changePassword'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode(reqBody));
 

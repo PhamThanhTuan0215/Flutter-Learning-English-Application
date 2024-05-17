@@ -7,23 +7,15 @@ class Flashcard {
 
 List<Flashcard> quesAnsList = [
   Flashcard(
-      question: "Q.Which country has the largest number of wild tigers?",
+      question: "Q.1?",
       answer: "India has the largest number of wild tigers in the world."),
+  Flashcard(question: "Q.2", answer: "chhatrapati Shivaji Maharaj"),
+  Flashcard(question: "Q.3:", answer: "Sher-e-Punjab"),
   Flashcard(
-      question: "Q.Who is considered the founder of Maratha empire?",
-      answer: "chhatrapati Shivaji Maharaj"),
-  Flashcard(
-      question: "Q.Lala Lajpat Rai was also known as :",
-      answer: "Sher-e-Punjab"),
-  Flashcard(
-      question:
-          "Q.Two of the great Mughals wrote their own memories. They were",
+      question: "Q.T4",
       answer:
           "Babar and Jahangir were two of the great Mughals wrote their own memories."),
-  Flashcard(
-      question:
-          "Q.Which revolutionary freedom fighter’s life story inspired the movie “Sardar Udham” ?",
-      answer: "Udham Singh"),
+  Flashcard(question: "Q.5 ?", answer: "Udham Singh"),
   Flashcard(
       question: "Q.What other viruses belong to the coronavirus family?",
       answer: "SARS and MERS"),
