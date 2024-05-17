@@ -34,8 +34,8 @@ class _LibraryScreenState extends State<LibraryScreen>
 
   Future<void> fetchTopics() async {
     try {
-      var response =
-          await http.get(Uri.parse('${urlRoot}/topics/library/${widget.username}'));
+      var response = await http
+          .get(Uri.parse('${urlRoot}/topics/library/${widget.username}'));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

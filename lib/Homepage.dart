@@ -69,9 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
 class Library extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return LibraryScreen(
-      username: 'thanhtuan',
-    );
+    return LibraryScreen(username: 'thanhtuan');
   }
 }
 
