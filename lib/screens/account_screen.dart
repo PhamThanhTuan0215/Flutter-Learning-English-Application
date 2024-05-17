@@ -11,6 +11,7 @@ import 'package:application_learning_english/widgets/setting_logout.dart';
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/sessionUser.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -26,21 +27,16 @@ class _AccountScreenState extends State<AccountScreen> {
   @override
   void initState() {
     super.initState();
-    getUserData();
+    loadUser();
   }
 
-  void getUserData() async {
-    prefs = await SharedPreferences.getInstance();
-    String? userJson = prefs.getString('user');
-    if (userJson != null) {
-      Map<String, dynamic> userMap = jsonDecode(userJson);
-      setState(() {
-        user = User.fromJson(userMap);
-      });
-    }
+  loadUser() async {
+    user = await getUserData();
+    setState(() {});
   }
 
   void logOutUser() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
     Navigator.pushReplacement(
         context, MaterialPageRoute(builder: (context) => MyLogin()));
@@ -50,12 +46,12 @@ class _AccountScreenState extends State<AccountScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          icon: const Icon(Ionicons.chevron_back_outline),
-        ),
+        // leading: IconButton(
+        //   onPressed: () {
+        //     Navigator.pop(context);
+        //   },
+        //   icon: const Icon(Ionicons.chevron_back_outline),
+        // ),
         leadingWidth: 80,
       ),
       body: SingleChildScrollView(
