@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:application_learning_english/forgotPassword.dart';
+import 'package:application_learning_english/toastify/account.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'config.dart';
@@ -75,7 +76,10 @@ class _MyLoginState extends State<MyLogin> {
         Navigator.push(
             context, MaterialPageRoute(builder: (context) => HomeScreen()));
       } else {
-        print(jsonResponse['message']);
+        showErrorToast(
+            context: context,
+            title: 'Login fail',
+            description: 'Password is not correct!');
       }
     } else {
       setState(() {

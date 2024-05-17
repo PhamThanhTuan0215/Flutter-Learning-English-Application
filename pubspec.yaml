@@ -41,7 +41,7 @@ dependencies:
     ionicons: ^0.2.2
     font_awesome_flutter: ^10.7.0
     flip_card: ^0.7.0
-
+    toastification:
 dev_dependencies:
     flutter_test:
         sdk: flutter

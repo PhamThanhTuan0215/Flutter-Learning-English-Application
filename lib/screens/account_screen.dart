@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:application_learning_english/loginPage.dart';
 import 'package:application_learning_english/screens/change_password_screen.dart';
 import 'package:application_learning_english/screens/edit_screen.dart';
 import 'package:application_learning_english/screens/leaderboards.dart';
+import 'package:application_learning_english/user.dart';
 import 'package:application_learning_english/widgets/forward_button.dart';
 import 'package:application_learning_english/widgets/setting_item.dart';
 import 'package:application_learning_english/widgets/setting_logout.dart';
@@ -17,11 +20,30 @@ class AccountScreen extends StatefulWidget {
 }
 
 class _AccountScreenState extends State<AccountScreen> {
+  late SharedPreferences prefs;
+  User? user;
+
+  @override
+  void initState() {
+    super.initState();
+    getUserData();
+  }
+
+  void getUserData() async {
+    prefs = await SharedPreferences.getInstance();
+    String? userJson = prefs.getString('user');
+    if (userJson != null) {
+      Map<String, dynamic> userMap = jsonDecode(userJson);
+      setState(() {
+        user = User.fromJson(userMap);
+      });
+    }
+  }
+
   void logOutUser() async {
-    print('hi');
-    SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
-    Navigator.push(context, MaterialPageRoute(builder: (context) => MyLogin()));
+    Navigator.pushReplacement(
+        context, MaterialPageRoute(builder: (context) => MyLogin()));
   }
 
   @override
@@ -29,7 +51,9 @@ class _AccountScreenState extends State<AccountScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          onPressed: () {},
+          onPressed: () {
+            Navigator.pop(context);
+          },
           icon: const Icon(Ionicons.chevron_back_outline),
         ),
         leadingWidth: 80,
@@ -62,26 +86,29 @@ class _AccountScreenState extends State<AccountScreen> {
                   children: [
                     Image.asset("assets/avatar.png", width: 70, height: 70),
                     const SizedBox(width: 20),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Username",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
+                    if (user != null)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user!.fullName ?? 'Username',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 10),
-                        Text(
-                          "Email",
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
+                          const SizedBox(height: 10),
+                          Text(
+                            user!.username ?? "Email not available",
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey,
+                            ),
                           ),
-                        )
-                      ],
-                    ),
+                        ],
+                      )
+                    else
+                      const CircularProgressIndicator(),
                     const Spacer(),
                     ForwardButton(
                       onTap: () {
@@ -92,7 +119,7 @@ class _AccountScreenState extends State<AccountScreen> {
                           ),
                         );
                       },
-                    )
+                    ),
                   ],
                 ),
               ),
