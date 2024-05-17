@@ -1,4 +1,5 @@
 import 'package:application_learning_english/screens/account_screen.dart';
+import 'package:application_learning_english/screens/library_scrren.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -27,9 +28,9 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _children = [
-    LibraryScreen(),
-    CommunityScreen(),
-    ProfileScreen(),
+    Library(),
+    Community(),
+    Profile(),
   ];
 
   void onTabTapped(int index) {
@@ -64,16 +65,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class LibraryScreen extends StatelessWidget {
+class Library extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Text('Library Screen'),
-    );
+    return LibraryScreen();
   }
 }
 
-class CommunityScreen extends StatelessWidget {
+class Community extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -82,7 +81,7 @@ class CommunityScreen extends StatelessWidget {
   }
 }
 
-class ProfileScreen extends StatelessWidget {
+class Profile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AccountScreen();
