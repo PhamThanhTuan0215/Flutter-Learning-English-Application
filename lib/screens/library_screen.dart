@@ -1,11 +1,10 @@
 import 'dart:convert';
 import 'package:application_learning_english/config.dart';
-import 'package:application_learning_english/topic.dart';
+import 'package:application_learning_english/models/topic.dart';
 import 'package:application_learning_english/widgets/topic_item.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'topic_item.dart'; // Import the TopicItem widget
 
 class LibraryScreen extends StatefulWidget {
   const LibraryScreen({super.key});
@@ -18,8 +17,10 @@ class _LibraryScreenState extends State<LibraryScreen>
     with SingleTickerProviderStateMixin {
   final urlRoot = kIsWeb ? WEB_URL : ANDROID_URL;
   List<Topic> topics = [];
+  List<Topic> searchTopics = [];
   String selectedFilter = 'During 7 days';
   late TabController _tabController;
+  bool isSearching = false;
 
   @override
   void initState() {
@@ -84,7 +85,16 @@ class _LibraryScreenState extends State<LibraryScreen>
                   hintText: 'Search topic name',
                   prefixIcon: Icon(Icons.search),
                 ),
-                onChanged: (value) {},
+                onChanged: (value) {
+                  setState(() {
+                    isSearching = value.isNotEmpty;
+                    searchTopics = topics
+                        .where((topic) => topic.topicName
+                            .toLowerCase()
+                            .contains(value.toLowerCase()))
+                        .toList();
+                  });
+                },
               ),
               SizedBox(height: 20),
               DropdownButton<String>(
@@ -109,7 +119,17 @@ class _LibraryScreenState extends State<LibraryScreen>
                 }).toList(),
               ),
               SizedBox(height: 20),
-              buildTopicSections(topics, selectedFilter)
+              Stack(
+                children: [
+                  Opacity(
+                      opacity: isSearching ? 0.0 : 1.0,
+                      child: buildTopicSections(topics, selectedFilter)),
+                  Opacity(
+                    opacity: isSearching ? 1.0 : 0.0,
+                    child: buildSearchTopics(searchTopics),
+                  ),
+                ],
+              )
             ],
           ),
         ),
@@ -134,6 +154,10 @@ class _LibraryScreenState extends State<LibraryScreen>
       ),
     );
   }
+}
+
+Widget buildSearchTopics(topics) {
+  return buildSection('Result search', topics);
 }
 
 Widget buildTopicSections(topics, selectedFilter) {
