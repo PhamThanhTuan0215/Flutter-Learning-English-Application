@@ -250,7 +250,8 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
                   word: widget.words[index],
                   onDelete: deleteWord,
                   onUpdate: updateWord,
-                  isEnableEdit: widget.isEnableEdit);
+                  isEnableEdit: widget.isEnableEdit,
+                  isLibrary: false,);
             },
           ),
         ),

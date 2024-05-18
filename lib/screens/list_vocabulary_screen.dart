@@ -249,17 +249,24 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
 
       Directory? directory = await getExternalStorageDirectory();
       if (directory != null) {
-        String folderPath = directory.path + '/YourFolderName';
+        String folderPath = directory.path + '/ExportFolder';
 
         print(folderPath);
 
-        // Directory(folderPath).createSync(recursive: true);
+        Directory(folderPath).createSync(recursive: true);
 
-        // String filePath = '$folderPath/Vocabularies.csv';
+        String filePath = '$folderPath/Vocabularies.csv';
 
-        // await File(filePath).writeAsString(csvContent.toString());
+        await File(filePath).writeAsString(csvContent.toString());
 
-        // print('Exported file saved at: $filePath');
+        print('Exported file saved at: ${filePath}');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Exported file saved at: ${filePath}'),
+            duration: Duration(seconds: 4),
+          ),
+        );
       } else {
         print('Could not access storage directory.');
       }
@@ -360,7 +367,8 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
                               word: widget.words[index],
                               onDelete: deleteWord,
                               onUpdate: updateWord,
-                              isEnableEdit: widget.isEnableEdit);
+                              isEnableEdit: widget.isEnableEdit,
+                              isLibrary: true);
                         },
                       ),
                     )

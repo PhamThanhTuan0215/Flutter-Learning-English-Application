@@ -267,15 +267,17 @@ class _TopicItemState extends State<TopicItem> {
                   children: [
                     Row(
                       children: [
-                        Text(
-                          widget.topic.topicName,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                        Expanded(
+                          child: Text(
+                            widget.topic.topicName,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                         SizedBox(
-                          width: 16.0,
+                          width: 8.0,
                         ),
                         (widget.topic.isPublic)
                             ? Icon(

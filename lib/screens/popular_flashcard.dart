@@ -54,14 +54,14 @@ class _PopularFlashcardState extends State<PopularFlashcard> {
         automaticallyImplyLeading: false,
         title: Text('Popular topic'),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.add),
-            onPressed: () {
-              // Handle adding new items
-            },
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     icon: Icon(Icons.add),
+        //     onPressed: () {
+        //       // Handle adding new items
+        //     },
+        //   ),
+        // ],
       ),
       body: SingleChildScrollView(
         child: Padding(

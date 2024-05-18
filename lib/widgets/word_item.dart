@@ -12,13 +12,15 @@ class WordItem extends StatefulWidget {
   final Function(String) onDelete;
   final Function(Word) onUpdate;
   final bool isEnableEdit;
+  bool isLibrary;
 
   WordItem(
       {Key? key,
       required this.word,
       required this.onDelete,
       required this.onUpdate,
-      required this.isEnableEdit})
+      required this.isEnableEdit,
+      required this.isLibrary})
       : super(key: key);
 
   @override
@@ -229,7 +231,7 @@ class _WordItemState extends State<WordItem> {
     return MouseRegion(
       onEnter: (_) {
         setState(() {
-          cardColor = Color.fromARGB(255, 211, 226, 227);
+          cardColor = Color.fromARGB(255, 219, 234, 236);
         });
       },
       onExit: (_) {
@@ -246,42 +248,37 @@ class _WordItemState extends State<WordItem> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10.0),
           ),
-          child: ListTile(
-            contentPadding:
-                EdgeInsets.symmetric(vertical: 8.0, horizontal: 32.0),
-            title: Row(
-              children: [
-                Text(
-                  widget.word.english,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Color.fromARGB(255, 38, 166, 199),
-                    fontSize: 20.0,
-                  ),
-                ),
-                SizedBox(
-                  width: 12,
-                ),
-                if (widget.word.status == 'mastered')
-                  Icon(
-                    Icons.check,
-                    color: Colors.green,
-                  ),
-              ],
-            ),
-            subtitle: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
+          child: Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        widget.word.english,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color.fromARGB(255, 38, 166, 199),
+                          fontSize: 20.0,
+                        ),
+                      ),
+                    ),
+                    if (widget.word.status == 'mastered' && widget.isLibrary)
+                      Icon(
+                        Icons.check,
+                        color: Colors.green,
+                      ),
+                  ],
+                ),
+                SizedBox(height: 8.0),
                 Text(
                   widget.word.vietnamese,
                   style: TextStyle(
                     color: Colors.black,
                     fontSize: 18.0,
                   ),
-                ),
-                SizedBox(
-                  height: 10,
                 ),
                 if (!widget.word.description.isEmpty)
                   Text(
@@ -291,48 +288,46 @@ class _WordItemState extends State<WordItem> {
                       fontSize: 16.0,
                     ),
                   ),
-              ],
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (widget.isEnableEdit)
-                  IconButton(
-                    icon: Icon(
-                      Icons.edit,
-                      color: Colors.blueGrey,
-                    ),
-                    onPressed: () {
-                      _adjustVocabularyDialog();
-                    },
-                  ),
-                SizedBox(
-                  width: 12.0,
+                SizedBox(height: 8.0),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (widget.isLibrary)
+                      IconButton(
+                        icon: Icon(
+                          widget.word.isStarred
+                              ? Icons.star
+                              : Icons.star_border,
+                          color: widget.word.isStarred
+                              ? Colors.yellow[700]
+                              : Colors.grey,
+                        ),
+                        onPressed: () {
+                          toggleMarkWord();
+                        },
+                      ),
+                    if (widget.isEnableEdit)
+                      IconButton(
+                        icon: Icon(
+                          Icons.edit,
+                          color: Colors.blueGrey,
+                        ),
+                        onPressed: () {
+                          _adjustVocabularyDialog();
+                        },
+                      ),
+                    if (widget.isEnableEdit)
+                      IconButton(
+                        icon: Icon(
+                          Icons.delete,
+                          color: Colors.black,
+                        ),
+                        onPressed: () {
+                          confirmRemove();
+                        },
+                      ),
+                  ],
                 ),
-                IconButton(
-                  icon: Icon(
-                    widget.word.isStarred ? Icons.star : Icons.star_border,
-                    color: widget.word.isStarred
-                        ? Colors.yellow[700]
-                        : Colors.grey,
-                  ),
-                  onPressed: () {
-                    toggleMarkWord();
-                  },
-                ),
-                SizedBox(
-                  width: 30.0,
-                ),
-                if (widget.isEnableEdit)
-                  IconButton(
-                    icon: Icon(
-                      Icons.delete,
-                      color: Colors.black,
-                    ),
-                    onPressed: () {
-                      confirmRemove();
-                    },
-                  ),
               ],
             ),
           ),
