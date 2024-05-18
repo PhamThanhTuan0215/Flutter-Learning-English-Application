@@ -260,7 +260,16 @@ class _TopicItemState extends State<TopicItem> {
                         SizedBox(
                           width: 16.0,
                         ),
-                        if (widget.topic.isPublic) Icon(Icons.public)
+                        (widget.topic.isPublic)
+                            ? Icon(
+                                Icons.public,
+                                color: Colors.blueGrey,
+                              )
+                            : Icon(
+                                Icons.lock,
+                                color: Colors.grey,
+                                size: 18.0,
+                              )
                       ],
                     ),
                     SizedBox(height: 10),
