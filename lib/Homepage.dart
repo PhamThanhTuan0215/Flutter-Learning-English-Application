@@ -1,5 +1,6 @@
 import 'package:application_learning_english/screens/account_screen.dart';
 import 'package:application_learning_english/screens/library_screen.dart';
+import 'package:application_learning_english/screens/popular_flashcard.dart';
 import 'package:application_learning_english/user.dart';
 import 'package:application_learning_english/utils/sessionUser.dart';
 import 'package:flutter/material.dart';
@@ -106,9 +107,7 @@ class _LibraryState extends State<Library> {
 class Community extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Text('Community Screen'),
-    );
+    return PopularFlashcard();
   }
 }
 

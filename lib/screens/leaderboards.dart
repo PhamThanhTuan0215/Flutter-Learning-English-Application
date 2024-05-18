@@ -85,7 +85,7 @@ class _LeaderBoardsState extends State<LeaderBoards> {
                                 SizedBox(height: 10,),
                                 Text('Category: ${achievement.category}', style: TextStyle(color: Colors.black, fontSize: 17)),
                                 SizedBox(height: 10,),
-                                Text('Achievement: ${achievement.achievement}', style: TextStyle(color: Colors.lightBlue, fontSize: 17),),
+                                _buildCategoryText(achievement.category, achievement.achievement),
                               ],
                             ),
                           ),
@@ -124,7 +124,7 @@ class _LeaderBoardsState extends State<LeaderBoards> {
                           SizedBox(width: 7,),
                           Align(
                             alignment: Alignment.centerRight,
-                            child: Text('${achievement.achievement}', style: TextStyle(color: Colors.lightBlue, fontSize: 17),),
+                            child: _buildCategoryText(achievement.category, achievement.achievement),
                           ),
                         ],
                       ),
@@ -144,5 +144,26 @@ class _LeaderBoardsState extends State<LeaderBoards> {
         ),
       ),
     );
+  }
+}
+
+
+Widget _buildCategoryText(String category, String achievement) {
+  if (category == 'duration') {
+    return Text(
+        '$achievement seconds',
+        style: TextStyle(color: Colors.black, fontSize: 17),
+      );
+  } else if(category == 'corrects'){
+    return Text(
+        '$achievement/5',
+        style: TextStyle(color: Colors.black, fontSize: 17),
+      );
+  }
+  else{
+    return Text(
+        '$achievement ',
+        style: TextStyle(color: Colors.black, fontSize: 17),
+      );
   }
 }

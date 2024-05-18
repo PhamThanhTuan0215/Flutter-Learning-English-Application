@@ -139,6 +139,14 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
       },
     );
   }
+  void updateWord(Word word) {
+    setState(() {
+      int index = widget.words.indexWhere((w) => w.id == word.id);
+      if (index != -1) {
+        widget.words[index] = word;
+      }
+    });
+  }
 
   Future<void> addWords(listWord) async {
     try {
@@ -241,7 +249,9 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
               return WordItem(
                 word: widget.words[index],
                 onDelete: deleteWord,
+                onUpdate: updateWord,
                 isEnableEdit: widget.isEnableEdit
+
               );
             },
           ),
