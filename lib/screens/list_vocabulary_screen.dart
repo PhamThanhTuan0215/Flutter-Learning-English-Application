@@ -201,20 +201,16 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
 
   void _importFile() async {
     try {
-      // Chọn tệp CSV
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['csv'],
       );
 
       if (result != null && result.files.single.bytes != null) {
-        // Đọc dữ liệu từ tệp CSV
         String fileContent = utf8.decode(result.files.single.bytes!);
 
-        // Phân tích cú pháp tệp CSV
         List<List<dynamic>> csvData = CsvToListConverter().convert(fileContent);
 
-        // Tạo danh sách listWord từ dữ liệu CSV
         List<Map<String, String>> listWord = [];
         for (var i = 1; i < csvData.length; i++) {
           listWord.add({
@@ -223,21 +219,56 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
           });
         }
 
-        print(listWord);
+        _showConfirmationDialog(listWord);
       } else {
         print("No file selected or file is empty.");
       }
     } catch (e) {
-      if (kIsWeb) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Can not import file from web platform'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
       print("Error picking or reading file: $e");
     }
+  }
+
+  void _showConfirmationDialog(List<Map<String, String>> listWord) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Confirm Add Words To Topic"),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: listWord.map((word) {
+                return Card(
+                  margin: EdgeInsets.symmetric(vertical: 5.0),
+                  elevation: 3.0,
+                  child: ListTile(
+                    leading: Icon(Icons.g_translate, color: Colors.blue),
+                    title: Text(word['english']!,
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(word['vietnamese']!),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("Cancel", style: TextStyle(color: Colors.red)),
+            ),
+            TextButton(
+              onPressed: () {
+                addWords(listWord);
+                Navigator.of(context).pop();
+              },
+              child: Text("Confirm", style: TextStyle(color: Colors.green)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -277,7 +308,7 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
           padding: const EdgeInsets.all(20.0),
           child: Column(
             children: [
-              Text('Import file'),
+              Text('Import file (.csv)'),
               IconButton(
                   onPressed: _importFile, icon: Icon(Icons.document_scanner)),
               Expanded(
