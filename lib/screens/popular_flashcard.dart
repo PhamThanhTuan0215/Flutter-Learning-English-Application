@@ -19,7 +19,7 @@ class _PopularFlashcardState extends State<PopularFlashcard> {
 
   List<Topic> topics = [];
   List<Topic> searchTopics = [];
-  String selectedFilter = 'During 7 days';
+  String selectedFilter = 'This Month';
   bool isSearching = false;
 
   @override
@@ -30,8 +30,7 @@ class _PopularFlashcardState extends State<PopularFlashcard> {
 
   Future<void> fetchTopics() async {
     try {
-      var response =
-          await http.get(Uri.parse('${url_root}/topics/public'));
+      var response = await http.get(Uri.parse('${url_root}/topics/public'));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -51,19 +50,19 @@ class _PopularFlashcardState extends State<PopularFlashcard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text('Popular topic'),
-          centerTitle: true,
-          actions: [
-            IconButton(
-              icon: Icon(Icons.add),
-              onPressed: () {
-                // Handle adding new items
-              },
-            ),
-          ],
-        ),
-        body: SingleChildScrollView(
+      appBar: AppBar(
+        title: Text('Popular topic'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.add),
+            onPressed: () {
+              // Handle adding new items
+            },
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(30),
           child: Column(
@@ -128,7 +127,11 @@ class _PopularFlashcardState extends State<PopularFlashcard> {
 }
 
 Widget buildSearchTopics(topics) {
-  return buildSection('Result search', topics);
+  return topics.length > 0
+      ? buildSection('Result search', topics)
+      : Center(
+          child: Text('No topic'),
+        );
 }
 
 Widget buildTopicSections(topics, selectedFilter) {
@@ -144,46 +147,82 @@ Widget buildTopicSections(topics, selectedFilter) {
   for (var topic in topics) {
     String section = getSectionsFromCreateAt(topic.createAt);
     categorizedTopics[section]?.add(topic);
+  }
 
-    if (section != 'This Year' && section != 'More This Year') {
-      categorizedTopics['This Year']?.add(topic);
-    }
+  bool isEmptyFilter = true;
 
-    if (section != 'This Month' &&
-        section != 'This Year' &&
-        section != 'More This Year') {
-      categorizedTopics['This Month']?.add(topic);
-    }
+  bool hasToday = false;
+  bool hasYesterday = false;
+  bool hasDuring7days = false;
+  bool hasThisMonth = false;
+  bool hasThisYear = false;
+  bool hasAll = false;
 
-    if (section != 'During 7 days' &&
-        section != 'This Month' &&
-        section != 'This Year' &&
-        section != 'More This Year') {
-      categorizedTopics['During 7 days']?.add(topic);
-    }
+  if (categorizedTopics['Today']!.length > 0 &&
+      (selectedFilter == 'Today' ||
+          selectedFilter == 'During 7 days' ||
+          selectedFilter == 'This Month' ||
+          selectedFilter == 'This Year' ||
+          selectedFilter == 'All')) {
+    hasToday = true;
+    isEmptyFilter = false;
+  }
+
+  if (categorizedTopics['Yesterday']!.length > 0 &&
+      (selectedFilter == 'Yesterday' ||
+          selectedFilter == 'During 7 days' ||
+          selectedFilter == 'This Month' ||
+          selectedFilter == 'This Year' ||
+          selectedFilter == 'All')) {
+    hasYesterday = true;
+    isEmptyFilter = false;
+  }
+  if (categorizedTopics['During 7 days']!.length > 0 &&
+      (selectedFilter == 'During 7 days' ||
+          selectedFilter == 'This Month' ||
+          selectedFilter == 'This Year' ||
+          selectedFilter == 'All')) {
+    hasDuring7days = true;
+    isEmptyFilter = false;
+  }
+  if (categorizedTopics['This Month']!.length > 0 &&
+      (selectedFilter == 'This Month' ||
+          selectedFilter == 'This Year' ||
+          selectedFilter == 'All')) {
+    hasThisMonth = true;
+    isEmptyFilter = false;
+  }
+  if (categorizedTopics['This Year']!.length > 0 &&
+      (selectedFilter == 'This Year' || selectedFilter == 'All')) {
+    hasThisYear = true;
+    isEmptyFilter = false;
+  }
+  if (categorizedTopics['More This Year']!.length > 0 &&
+      selectedFilter == 'All') {
+    hasAll = true;
+    isEmptyFilter = false;
+  }
+
+  if (isEmptyFilter) {
+    return Center(
+      child: Text('No topic'),
+    );
   }
 
   return ListView(
     shrinkWrap: true,
     physics: NeverScrollableScrollPhysics(),
     children: [
-      if (categorizedTopics['Today']!.length > 0 &&
-          (selectedFilter == 'Today' || selectedFilter == 'All'))
-        buildSection('Today', categorizedTopics['Today']!),
-      if (categorizedTopics['Yesterday']!.length > 0 &&
-          (selectedFilter == 'Yesterday' || selectedFilter == 'All'))
+      if (hasToday) buildSection('Today', categorizedTopics['Today']!),
+      if (hasYesterday)
         buildSection('Yesterday', categorizedTopics['Yesterday']!),
-      if (categorizedTopics['During 7 days']!.length > 0 &&
-          (selectedFilter == 'During 7 days' || selectedFilter == 'All'))
+      if (hasDuring7days)
         buildSection('During 7 days', categorizedTopics['During 7 days']!),
-      if (categorizedTopics['This Month']!.length > 0 &&
-          (selectedFilter == 'This Month' || selectedFilter == 'All'))
+      if (hasThisMonth)
         buildSection('This Month', categorizedTopics['This Month']!),
-      if (categorizedTopics['This Year']!.length > 0 &&
-          (selectedFilter == 'This Year' || selectedFilter == 'All'))
+      if (hasThisYear)
         buildSection('This Year', categorizedTopics['This Year']!),
-      if (categorizedTopics['More This Year']!.length > 0 &&
-          selectedFilter == 'All')
+      if (hasAll)
         buildSection('More This Year', categorizedTopics['More This Year']!),
     ],
   );

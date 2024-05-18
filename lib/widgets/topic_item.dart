@@ -12,7 +12,6 @@ class TopicItem extends StatefulWidget {
   Topic topic;
   String username;
   final Function(String) onDelete;
-  final Function(Topic) onUpdate;
   bool isLibrary;
 
   TopicItem(
@@ -20,7 +19,6 @@ class TopicItem extends StatefulWidget {
       required this.topic,
       required this.username,
       required this.onDelete,
-      required this.onUpdate,
       required this.isLibrary})
       : super(key: key);
 
@@ -38,9 +36,16 @@ class _TopicItemState extends State<TopicItem> {
   void initState() {
     super.initState();
     fetchVocabulary();
+    reloadTopic();
 
     if (widget.topic.owner == widget.username) {
-      isEnableEdit = true;
+      setState(() {
+        isEnableEdit = true;
+      });
+    } else {
+      setState(() {
+        isEnableEdit = false;
+      });
     }
   }
 
@@ -75,6 +80,15 @@ class _TopicItemState extends State<TopicItem> {
 
   Future<void> reloadTopic() async {
     try {
+      if (widget.topic.owner == widget.username) {
+        setState(() {
+          isEnableEdit = true;
+        });
+      } else {
+        setState(() {
+          isEnableEdit = false;
+        });
+      }
       var response = await http
           .get(Uri.parse('${urlRoot}/topics/getTopic/${widget.topic.id}'));
 
@@ -127,7 +141,6 @@ class _TopicItemState extends State<TopicItem> {
         if (data['code'] == 0) {
           setState(() {
             widget.topic = Topic.fromJson(data['updatedTopic']);
-            widget.onUpdate(Topic.fromJson(data['updatedTopic']));
           });
         }
       } else {
@@ -224,6 +237,7 @@ class _TopicItemState extends State<TopicItem> {
     return InkWell(
       onTap: () async {
         await fetchVocabulary();
+        await reloadTopic();
         var isUpdateAmount = await Navigator.push(
           context,
           MaterialPageRoute(

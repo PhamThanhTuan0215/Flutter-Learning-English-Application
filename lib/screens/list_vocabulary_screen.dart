@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:application_learning_english/config.dart';
 import 'package:application_learning_english/flashCard.dart';
@@ -8,9 +9,8 @@ import 'package:application_learning_english/widgets/word_item.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
+import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
-import 'dart:io';
 import 'package:csv/csv.dart';
 
 class ListVocabularyScreen extends StatefulWidget {
@@ -228,6 +228,45 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
     }
   }
 
+  void _exportFile() async {
+    List<Map<String, String>> listWord = [];
+
+    for (var word in widget.words) {
+      listWord.add({
+        'english': word.english,
+        'vietnamese': word.vietnamese,
+      });
+    }
+
+    try {
+      var csvContent = StringBuffer();
+      csvContent.writeln('English,Vietnamese');
+
+      listWord.forEach((word) {
+        csvContent.writeln('${word['english']},${word['vietnamese']}');
+      });
+
+      Directory? directory = await getExternalStorageDirectory();
+      if (directory != null) {
+        String folderPath = directory.path + '/YourFolderName';
+
+        print(folderPath);
+
+        // Directory(folderPath).createSync(recursive: true);
+
+        // String filePath = '$folderPath/Vocabularies.csv';
+
+        // await File(filePath).writeAsString(csvContent.toString());
+
+        // print('Exported file saved at: $filePath');
+      } else {
+        print('Could not access storage directory.');
+      }
+    } catch (e) {
+      print('Error exporting file: $e');
+    }
+  }
+
   void _showConfirmationDialog(List<Map<String, String>> listWord) {
     showDialog(
       context: context,
@@ -283,6 +322,9 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
         title: Center(child: Text('Vocabulary List')),
         actions: [
           if (widget.isEnableEdit)
+            TextButton(onPressed: _importFile, child: Text('Import')),
+          TextButton(onPressed: _exportFile, child: Text('Export')),
+          if (widget.isEnableEdit)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: SizedBox(
@@ -308,21 +350,22 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
           padding: const EdgeInsets.all(20.0),
           child: Column(
             children: [
-              Text('Import file (.csv)'),
-              IconButton(
-                  onPressed: _importFile, icon: Icon(Icons.document_scanner)),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: widget.words.length,
-                  itemBuilder: (context, index) {
-                    return WordItem(
-                        word: widget.words[index],
-                        onDelete: deleteWord,
-                        onUpdate: updateWord,
-                        isEnableEdit: widget.isEnableEdit);
-                  },
-                ),
-              ),
+              (widget.words.length > 0)
+                  ? Expanded(
+                      child: ListView.builder(
+                        itemCount: widget.words.length,
+                        itemBuilder: (context, index) {
+                          return WordItem(
+                              word: widget.words[index],
+                              onDelete: deleteWord,
+                              onUpdate: updateWord,
+                              isEnableEdit: widget.isEnableEdit);
+                        },
+                      ),
+                    )
+                  : Center(
+                      child: Text('No vocabulary'),
+                    ),
             ],
           ),
         ),

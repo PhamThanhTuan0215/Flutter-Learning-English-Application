@@ -47,6 +47,8 @@ dependencies:
     csv: ^6.0.0
     intl: ^0.18.0
     flutter_tts: ^4.0.2
+    path_provider: ^2.0.14
+    provider: ^6.1.2
 dev_dependencies:
     flutter_test:
         sdk: flutter

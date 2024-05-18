@@ -2,12 +2,11 @@ import 'dart:convert';
 import 'package:application_learning_english/config.dart';
 import 'package:application_learning_english/models/folder.dart';
 import 'package:application_learning_english/models/topic.dart';
-import 'package:application_learning_english/user.dart';
+import 'package:application_learning_english/screens/list_topics_in_folder_screen.dart';
 import 'package:application_learning_english/widgets/topic_item.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 class LibraryScreen extends StatefulWidget {
   String username;
@@ -27,13 +26,26 @@ class _LibraryScreenState extends State<LibraryScreen>
   late TabController _tabController;
   bool isSearching = false;
 
+  bool isUpdate = false;
+
   List<Folder> folders = [];
   List<Folder> displayedFolders = [];
 
-  void deleteTopic(String topicId) {
+  void updatingLibrary() {
     setState(() {
-      topics.removeWhere((topic) => topic.id == topicId);
+      isUpdate = true;
     });
+
+    Future.delayed(Duration(milliseconds: 500), () {
+      setState(() {
+        isUpdate = false;
+      });
+    });
+  }
+
+  void deleteTopic(String topicId) {
+    fetchTopics();
+    updatingLibrary();
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -41,15 +53,6 @@ class _LibraryScreenState extends State<LibraryScreen>
         duration: Duration(seconds: 2),
       ),
     );
-  }
-
-  void updateWord(Topic topic) {
-    setState(() {
-      int index = topics.indexWhere((t) => t.id == topic.id);
-      if (index != -1) {
-        topics[index] = topic;
-      }
-    });
   }
 
   @override
@@ -76,6 +79,7 @@ class _LibraryScreenState extends State<LibraryScreen>
           topics = (data['topics'] as List)
               .map((json) => Topic.fromJson(json))
               .toList();
+          selectedFilter = 'This Month';
         });
       } else {
         throw Exception('Failed to load topics');
@@ -123,11 +127,8 @@ class _LibraryScreenState extends State<LibraryScreen>
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['code'] == 0) {
-          setState(() {
-            var newTopic = Topic.fromJson(data['topic']);
-            topics.insert(0, newTopic);
-            selectedFilter = 'This Month';
-          });
+          await fetchTopics();
+          updatingLibrary();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -139,11 +140,121 @@ class _LibraryScreenState extends State<LibraryScreen>
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Failed to add word'),
+            content: Text('Failed to add topic'),
             duration: Duration(seconds: 2),
           ),
         );
-        throw Exception('Failed to add word');
+        throw Exception('Failed to add topic');
+      }
+    } catch (err) {
+      print(err);
+    }
+  }
+
+  Future<void> renameFolder(Folder folder, folderName) async {
+    if (folderName == folder.folderName) {
+      return;
+    }
+    try {
+      var response =
+          await http.patch(Uri.parse('${urlRoot}/folders/rename/${folder.id}'),
+              headers: <String, String>{
+                'Content-Type': 'application/json; charset=UTF-8',
+              },
+              body: jsonEncode(<String, dynamic>{'folderName': folderName}));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 0) {
+          fetchFolders();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(data['message'].toString()),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to rename folder'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        throw Exception('Failed to rename folder');
+      }
+    } catch (err) {
+      print(err);
+    }
+  }
+
+  Future<void> deleteFolder(Folder folder) async {
+    try {
+      var response = await http
+          .delete(Uri.parse('${urlRoot}/folders/delete/${folder.id}'));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Delete folder successfully'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+          fetchFolders();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(data['message'].toString()),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to delete folder'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        throw Exception('Failed to delete folder');
+      }
+    } catch (err) {
+      print(err);
+    }
+  }
+
+  Future<void> addFolder(folderName) async {
+    try {
+      var response = await http.post(
+          Uri.parse('${urlRoot}/folders/${widget.accountId}/add'),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: jsonEncode(<String, dynamic>{'folderName': folderName}));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 0) {
+          fetchFolders();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(data['message'].toString()),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to add folder'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        throw Exception('Failed to add folder');
       }
     } catch (err) {
       print(err);
@@ -245,6 +356,143 @@ class _LibraryScreenState extends State<LibraryScreen>
     }
   }
 
+  void _confirmDeleteFolder(folder) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Confirm Deletion"),
+          content: Text("Are you sure you want to delete this folder?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                deleteFolder(folder);
+              },
+              child: Text("Delete"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _renameFolderDialog(folder) {
+    var _key = GlobalKey<FormState>();
+    var _folderNameController = TextEditingController();
+
+    String folderName = '';
+    _folderNameController.text = folder.folderName;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: Text("Rename Folder"),
+            content: Form(
+              key: _key,
+              child: TextFormField(
+                controller: _folderNameController,
+                decoration: InputDecoration(
+                    labelText: 'Folder Name', border: OutlineInputBorder()),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter folder name';
+                  }
+                },
+                onSaved: (value) {
+                  folderName = value ?? '';
+                },
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text("Cancel"),
+              ),
+              TextButton(
+                onPressed: () {
+                  if (_key.currentState?.validate() ?? false) {
+                    _key.currentState?.save();
+
+                    renameFolder(folder, folderName);
+                    Navigator.of(context).pop();
+                  }
+                },
+                child: Text("Save"),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _addFolderDialog() {
+    var _key = GlobalKey<FormState>();
+
+    String folderName = '';
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: Text("Add New Folder"),
+            content: Form(
+              key: _key,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    decoration: InputDecoration(
+                        labelText: 'Folder Name', border: OutlineInputBorder()),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter folder name';
+                      }
+                    },
+                    onSaved: (value) {
+                      folderName = value ?? '';
+                    },
+                  ),
+                ],
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text("Cancel"),
+              ),
+              TextButton(
+                onPressed: () {
+                  if (_key.currentState?.validate() ?? false) {
+                    _key.currentState?.save();
+
+                    addFolder(folderName);
+                    Navigator.of(context).pop();
+                  }
+                },
+                child: Text("Save"),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -255,16 +503,21 @@ class _LibraryScreenState extends State<LibraryScreen>
           tabs: [
             Tab(text: 'My Sets'),
             Tab(text: 'Folders'),
+            Tab(text: ''),
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          MySets(),
-          Folders(),
-        ],
-      ),
+      body: (!isUpdate)
+          ? TabBarView(
+              controller: _tabController,
+              children: [
+                MySets(),
+                Folders(),
+              ],
+            )
+          : Center(
+              child: CircularProgressIndicator(),
+            ),
     );
   }
 
@@ -320,11 +573,11 @@ class _LibraryScreenState extends State<LibraryScreen>
                   Opacity(
                       opacity: isSearching ? 0.0 : 1.0,
                       child: buildTopicSections(topics, selectedFilter,
-                          widget.username, deleteTopic, updateWord)),
+                          widget.username, deleteTopic)),
                   Opacity(
                     opacity: isSearching ? 1.0 : 0.0,
                     child: buildSearchTopics(
-                        searchTopics, widget.username, deleteTopic, updateWord),
+                        searchTopics, widget.username, deleteTopic),
                   ),
                 ],
               )
@@ -357,26 +610,34 @@ class _LibraryScreenState extends State<LibraryScreen>
                 },
               ),
               SizedBox(height: 20),
-              buildListFolder(displayedFolders),
+              buildListFolder(
+                  displayedFolders,
+                  _renameFolderDialog,
+                  _confirmDeleteFolder,
+                  _addTopicDialog,
+                  widget.username,
+                  topics),
             ],
           ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: _addFolderDialog,
         child: Icon(Icons.add),
       ),
     );
   }
 }
 
-Widget buildSearchTopics(topics, username, deleteTopic, updateWord) {
-  return buildSection(
-      'Result search', topics, username, deleteTopic, updateWord);
+Widget buildSearchTopics(topics, username, deleteTopic) {
+  return topics.length > 0
+      ? buildSection('Result search', topics, username, deleteTopic)
+      : Center(
+          child: Text('No topic'),
+        );
 }
 
-Widget buildTopicSections(
-    topics, selectedFilter, username, deleteTopic, updateWord) {
+Widget buildTopicSections(topics, selectedFilter, username, deleteTopic) {
   Map<String, List<Topic>> categorizedTopics = {
     'Today': [],
     'Yesterday': [],
@@ -389,72 +650,96 @@ Widget buildTopicSections(
   for (var topic in topics) {
     String section = getSectionsFromCreateAt(topic.createAt);
     categorizedTopics[section]?.add(topic);
+  }
 
-    // if (section != 'This Year' && section != 'More This Year') {
-    //   categorizedTopics['This Year']?.add(topic);
-    // }
+  bool isEmptyFilter = true;
 
-    // if (section != 'This Month' &&
-    //     section != 'This Year' &&
-    //     section != 'More This Year') {
-    //   categorizedTopics['This Month']?.add(topic);
-    // }
+  bool hasToday = false;
+  bool hasYesterday = false;
+  bool hasDuring7days = false;
+  bool hasThisMonth = false;
+  bool hasThisYear = false;
+  bool hasAll = false;
 
-    // if (section != 'During 7 days' &&
-    //     section != 'This Month' &&
-    //     section != 'This Year' &&
-    //     section != 'More This Year') {
-    //   categorizedTopics['During 7 days']?.add(topic);
-    // }
+  if (categorizedTopics['Today']!.length > 0 &&
+      (selectedFilter == 'Today' ||
+          selectedFilter == 'During 7 days' ||
+          selectedFilter == 'This Month' ||
+          selectedFilter == 'This Year' ||
+          selectedFilter == 'All')) {
+    hasToday = true;
+    isEmptyFilter = false;
+  }
+
+  if (categorizedTopics['Yesterday']!.length > 0 &&
+      (selectedFilter == 'Yesterday' ||
+          selectedFilter == 'During 7 days' ||
+          selectedFilter == 'This Month' ||
+          selectedFilter == 'This Year' ||
+          selectedFilter == 'All')) {
+    hasYesterday = true;
+    isEmptyFilter = false;
+  }
+  if (categorizedTopics['During 7 days']!.length > 0 &&
+      (selectedFilter == 'During 7 days' ||
+          selectedFilter == 'This Month' ||
+          selectedFilter == 'This Year' ||
+          selectedFilter == 'All')) {
+    hasDuring7days = true;
+    isEmptyFilter = false;
+  }
+  if (categorizedTopics['This Month']!.length > 0 &&
+      (selectedFilter == 'This Month' ||
+          selectedFilter == 'This Year' ||
+          selectedFilter == 'All')) {
+    hasThisMonth = true;
+    isEmptyFilter = false;
+  }
+  if (categorizedTopics['This Year']!.length > 0 &&
+      (selectedFilter == 'This Year' || selectedFilter == 'All')) {
+    hasThisYear = true;
+    isEmptyFilter = false;
+  }
+  if (categorizedTopics['More This Year']!.length > 0 &&
+      selectedFilter == 'All') {
+    hasAll = true;
+    isEmptyFilter = false;
+  }
+
+  if (isEmptyFilter) {
+    return Center(
+      child: Text('No topic'),
+    );
   }
 
   return ListView(
     shrinkWrap: true,
     physics: NeverScrollableScrollPhysics(),
     children: [
-      if (categorizedTopics['Today']!.length > 0 &&
-          (selectedFilter == 'Today' ||
-              selectedFilter == 'During 7 days' ||
-              selectedFilter == 'This Month' ||
-              selectedFilter == 'This Year' ||
-              selectedFilter == 'All'))
-        buildSection('Today', categorizedTopics['Today']!, username,
-            deleteTopic, updateWord),
-      if (categorizedTopics['Yesterday']!.length > 0 &&
-          (selectedFilter == 'Yesterday' ||
-              selectedFilter == 'During 7 days' ||
-              selectedFilter == 'This Month' ||
-              selectedFilter == 'This Year' ||
-              selectedFilter == 'All'))
+      if (hasToday)
+        buildSection(
+            'Today', categorizedTopics['Today']!, username, deleteTopic),
+      if (hasYesterday)
         buildSection('Yesterday', categorizedTopics['Yesterday']!, username,
-            deleteTopic, updateWord),
-      if (categorizedTopics['During 7 days']!.length > 0 &&
-          (selectedFilter == 'During 7 days' ||
-              selectedFilter == 'This Month' ||
-              selectedFilter == 'This Year' ||
-              selectedFilter == 'All'))
+            deleteTopic),
+      if (hasDuring7days)
         buildSection('During 7 days', categorizedTopics['During 7 days']!,
-            username, deleteTopic, updateWord),
-      if (categorizedTopics['This Month']!.length > 0 &&
-          (selectedFilter == 'This Month' ||
-              selectedFilter == 'This Year' ||
-              selectedFilter == 'All'))
+            username, deleteTopic),
+      if (hasThisMonth)
         buildSection('This Month', categorizedTopics['This Month']!, username,
-            deleteTopic, updateWord),
-      if (categorizedTopics['This Year']!.length > 0 &&
-          (selectedFilter == 'This Year' || selectedFilter == 'All'))
+            deleteTopic),
+      if (hasThisYear)
         buildSection('This Year', categorizedTopics['This Year']!, username,
-            deleteTopic, updateWord),
-      if (categorizedTopics['More This Year']!.length > 0 &&
-          selectedFilter == 'All')
+            deleteTopic),
+      if (hasAll)
         buildSection('More This Year', categorizedTopics['More This Year']!,
-            username, deleteTopic, updateWord),
+            username, deleteTopic),
     ],
   );
 }
 
-Widget buildSection(String title, List<Topic> topics, String username,
-    deleteTopic, updateWord) {
+Widget buildSection(
+    String title, List<Topic> topics, String username, deleteTopic) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -475,8 +760,7 @@ Widget buildSection(String title, List<Topic> topics, String username,
               isLibrary: true,
               topic: topics[index],
               username: username,
-              onDelete: deleteTopic,
-              onUpdate: updateWord);
+              onDelete: deleteTopic);
         },
       ),
     ],
@@ -506,24 +790,68 @@ String getSectionsFromCreateAt(createAt) {
   }
 }
 
-Widget buildListFolder(List<Folder> folders) {
-  return ListView.builder(
-    shrinkWrap: true,
-    physics: NeverScrollableScrollPhysics(),
-    itemCount: folders.length,
-    itemBuilder: (context, index) {
-      Folder folder = folders[index];
-      return Card(
-        elevation: 3,
-        margin: EdgeInsets.symmetric(vertical: 10),
-        child: ListTile(
-          title: Text(folder.folderName),
-          subtitle: Text('Created at: ${folder.createAt}'),
-          onTap: () {
-            // Handle folder tap
+Widget buildListFolder(List<Folder> folders, Function _renameFolderDialog,
+    Function _confirmDeleteFolder, Function _addTopicDialog, username, topics) {
+  return (folders.length > 0)
+      ? ListView.builder(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          itemCount: folders.length,
+          itemBuilder: (context, index) {
+            Folder folder = folders[index];
+            return InkWell(
+              child: Card(
+                color: Color.fromARGB(255, 71, 158, 230),
+                elevation: 3,
+                margin: EdgeInsets.symmetric(vertical: 10),
+                child: ListTile(
+                  leading: Icon(
+                    Icons.folder,
+                    color: Colors.yellow,
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          _renameFolderDialog(folder);
+                        },
+                        icon: Icon(
+                          Icons.edit,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          _confirmDeleteFolder(folder);
+                        },
+                        icon: Icon(Icons.delete),
+                      ),
+                    ],
+                  ),
+                  title: Text(
+                    folder.folderName,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ListTopicsInFolderScreen(
+                          folder: folder,
+                          username: username,
+                          allTopics: topics,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            );
           },
-        ),
-      );
-    },
-  );
+        )
+      : Container(
+          alignment: Alignment.center,
+          child: Center(child: Text('No folder')),
+        );
 }

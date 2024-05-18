@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Bottom Navigation Bar Demo',
+      title: 'Learning English',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
