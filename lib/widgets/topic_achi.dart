@@ -47,11 +47,11 @@ class _TopicItemState extends State<TopicItem> {
     }
     setState(() {});
   }
-  
+
   Future<void> fetchVocabulary() async {
     try {
-      var response = await http.get(
-          Uri.parse('${urlRoot}/topics/${widget.topic.id}/words/${widget.topic.owner}'));
+      var response = await http.get(Uri.parse(
+          '${urlRoot}/topics/${widget.topic.id}/words/${widget.topic.owner}'));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -142,22 +142,6 @@ class _TopicItemState extends State<TopicItem> {
                   ),
                 ],
               ),
-              SizedBox(height: 5),
-              if (!widget.topic.isPublic || isEnableEdit)
-                Row(
-                  children: [
-                    Icon(Icons.timeline, color: Colors.green),
-                    SizedBox(width: 10),
-                    Text(
-                      'Progress: ${masteredWords.length}/${widget.topic.total}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-              SizedBox(height: 5),
               Row(
                 children: [
                   Icon(Icons.person, color: Colors.red),

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:application_learning_english/models/word.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_tts/flutter_tts.dart';
 
 class WordItem extends StatefulWidget {
   Word word;
@@ -26,6 +27,8 @@ class WordItem extends StatefulWidget {
 
 class _WordItemState extends State<WordItem> {
   final urlRoot = kIsWeb ? WEB_URL : ANDROID_URL;
+  final FlutterTts flutterTts = FlutterTts();
+  Color cardColor = Colors.white;
 
   Future<void> toggleMarkWord() async {
     try {
@@ -212,77 +215,126 @@ class _WordItemState extends State<WordItem> {
     );
   }
 
+  Future<void> _pronounceWord() async {
+    String text = widget.word.english;
+    try {
+      await flutterTts.speak(text);
+    } catch (err) {
+      print(err);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: widget.isEnableEdit ? _adjustVocabularyDialog : null,
-      child: Card(
-        elevation: 4.0,
-        margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        child: ListTile(
-          contentPadding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 32.0),
-          title: Text(
-            widget.word.english,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Color.fromARGB(255, 38, 166, 199),
-              fontSize: 20.0,
-            ),
+    return MouseRegion(
+      onEnter: (_) {
+        setState(() {
+          cardColor = Color.fromARGB(255, 211, 226, 227);
+        });
+      },
+      onExit: (_) {
+        setState(() {
+          cardColor = Colors.white;
+        });
+      },
+      child: InkWell(
+        onTap: _pronounceWord,
+        child: Card(
+          color: cardColor,
+          elevation: 4.0,
+          margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.0),
           ),
-          subtitle: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.word.vietnamese,
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 18.0,
-                ),
-              ),
-              SizedBox(
-                height: 10,
-              ),
-              if (!widget.word.description.isEmpty)
+          child: ListTile(
+            contentPadding:
+                EdgeInsets.symmetric(vertical: 8.0, horizontal: 32.0),
+            title: Row(
+              children: [
                 Text(
-                  '(${widget.word.description})',
+                  widget.word.english,
                   style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 16.0,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 38, 166, 199),
+                    fontSize: 20.0,
                   ),
                 ),
-            ],
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: Icon(
-                  widget.word.isStarred ? Icons.star : Icons.star_border,
-                  color:
-                      widget.word.isStarred ? Colors.yellow[700] : Colors.grey,
+                SizedBox(
+                  width: 12,
                 ),
-                onPressed: () {
-                  toggleMarkWord();
-                },
-              ),
-              SizedBox(
-                width: 40.0,
-              ),
-              if (widget.isEnableEdit)
+                if (widget.word.status == 'mastered')
+                  Icon(
+                    Icons.check,
+                    color: Colors.green,
+                  ),
+              ],
+            ),
+            subtitle: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.word.vietnamese,
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 18.0,
+                  ),
+                ),
+                SizedBox(
+                  height: 10,
+                ),
+                if (!widget.word.description.isEmpty)
+                  Text(
+                    '(${widget.word.description})',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 16.0,
+                    ),
+                  ),
+              ],
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (widget.isEnableEdit)
+                  IconButton(
+                    icon: Icon(
+                      Icons.edit,
+                      color: Colors.blueGrey,
+                    ),
+                    onPressed: () {
+                      _adjustVocabularyDialog();
+                    },
+                  ),
+                SizedBox(
+                  width: 12.0,
+                ),
                 IconButton(
                   icon: Icon(
-                    Icons.delete,
-                    color: Colors.black,
+                    widget.word.isStarred ? Icons.star : Icons.star_border,
+                    color: widget.word.isStarred
+                        ? Colors.yellow[700]
+                        : Colors.grey,
                   ),
                   onPressed: () {
-                    confirmRemove();
+                    toggleMarkWord();
                   },
                 ),
-            ],
+                SizedBox(
+                  width: 30.0,
+                ),
+                if (widget.isEnableEdit)
+                  IconButton(
+                    icon: Icon(
+                      Icons.delete,
+                      color: Colors.black,
+                    ),
+                    onPressed: () {
+                      confirmRemove();
+                    },
+                  ),
+              ],
+            ),
           ),
         ),
       ),

@@ -13,13 +13,15 @@ class TopicItem extends StatefulWidget {
   String username;
   final Function(String) onDelete;
   final Function(Topic) onUpdate;
+  bool isLibrary;
 
   TopicItem(
       {Key? key,
       required this.topic,
       required this.username,
       required this.onDelete,
-      required this.onUpdate})
+      required this.onUpdate,
+      required this.isLibrary})
       : super(key: key);
 
   @override
@@ -287,7 +289,7 @@ class _TopicItemState extends State<TopicItem> {
                       ],
                     ),
                     SizedBox(height: 5),
-                    if (isEnableEdit)
+                    if (widget.isLibrary)
                       Row(
                         children: [
                           Icon(Icons.timeline, color: Colors.green),

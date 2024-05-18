@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:application_learning_english/config.dart';
+import 'package:application_learning_english/models/folder.dart';
 import 'package:application_learning_english/models/topic.dart';
 import 'package:application_learning_english/user.dart';
 import 'package:application_learning_english/widgets/topic_item.dart';
@@ -10,7 +11,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class LibraryScreen extends StatefulWidget {
   String username;
-  LibraryScreen({super.key, required this.username});
+  String accountId;
+  LibraryScreen({super.key, required this.username, required this.accountId});
 
   @override
   State<LibraryScreen> createState() => _LibraryScreenState();
@@ -25,6 +27,9 @@ class _LibraryScreenState extends State<LibraryScreen>
   late TabController _tabController;
   bool isSearching = false;
 
+  List<Folder> folders = [];
+  List<Folder> displayedFolders = [];
+
   void deleteTopic(String topicId) {
     setState(() {
       topics.removeWhere((topic) => topic.id == topicId);
@@ -32,7 +37,7 @@ class _LibraryScreenState extends State<LibraryScreen>
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Remove word successfully'),
+        content: Text('Remove topic successfully'),
         duration: Duration(seconds: 2),
       ),
     );
@@ -51,7 +56,13 @@ class _LibraryScreenState extends State<LibraryScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+        _onTabChanged(_tabController.index);
+      }
+    });
     fetchTopics();
+    fetchFolders();
   }
 
   Future<void> fetchTopics() async {
@@ -68,6 +79,29 @@ class _LibraryScreenState extends State<LibraryScreen>
         });
       } else {
         throw Exception('Failed to load topics');
+      }
+    } catch (err) {
+      print(err);
+    }
+  }
+
+  Future<void> fetchFolders() async {
+    try {
+      var response =
+          await http.get(Uri.parse('${urlRoot}/folders/${widget.accountId}'));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 0) {
+          setState(() {
+            folders = (data['listFolder'] as List)
+                .map((json) => Folder.fromJson(json))
+                .toList();
+          });
+          displayedFolders = folders;
+        }
+      } else {
+        throw Exception('Failed to load folders');
       }
     } catch (err) {
       print(err);
@@ -92,7 +126,7 @@ class _LibraryScreenState extends State<LibraryScreen>
           setState(() {
             var newTopic = Topic.fromJson(data['topic']);
             topics.insert(0, newTopic);
-            selectedFilter = 'Today';
+            selectedFilter = 'This Month';
           });
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -184,6 +218,31 @@ class _LibraryScreenState extends State<LibraryScreen>
         );
       },
     );
+  }
+
+  void updateDisplayedFolders(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        displayedFolders = folders;
+      } else {
+        displayedFolders = folders
+            .where((folder) =>
+                folder.folderName.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      }
+    });
+  }
+
+  void _onTabChanged(int index) {
+    if (index == 0) {
+      setState(() {
+        isSearching = false;
+      });
+    } else if (index == 1) {
+      setState(() {
+        displayedFolders = folders;
+      });
+    }
   }
 
   @override
@@ -283,8 +342,24 @@ class _LibraryScreenState extends State<LibraryScreen>
   Widget Folders() {
     return Scaffold(
       body: SingleChildScrollView(
-        child: Center(
-          child: Text('Folders content here'),
+        child: Padding(
+          padding: const EdgeInsets.all(30),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search folder name',
+                  prefixIcon: Icon(Icons.search),
+                ),
+                onChanged: (value) {
+                  updateDisplayedFolders(value);
+                },
+              ),
+              SizedBox(height: 20),
+              buildListFolder(displayedFolders),
+            ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -397,6 +472,7 @@ Widget buildSection(String title, List<Topic> topics, String username,
         itemCount: topics.length,
         itemBuilder: (context, index) {
           return TopicItem(
+              isLibrary: true,
               topic: topics[index],
               username: username,
               onDelete: deleteTopic,
@@ -428,4 +504,26 @@ String getSectionsFromCreateAt(createAt) {
   } else {
     return 'More This Year';
   }
+}
+
+Widget buildListFolder(List<Folder> folders) {
+  return ListView.builder(
+    shrinkWrap: true,
+    physics: NeverScrollableScrollPhysics(),
+    itemCount: folders.length,
+    itemBuilder: (context, index) {
+      Folder folder = folders[index];
+      return Card(
+        elevation: 3,
+        margin: EdgeInsets.symmetric(vertical: 10),
+        child: ListTile(
+          title: Text(folder.folderName),
+          subtitle: Text('Created at: ${folder.createAt}'),
+          onTap: () {
+            // Handle folder tap
+          },
+        ),
+      );
+    },
+  );
 }

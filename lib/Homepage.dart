@@ -77,6 +77,7 @@ class Library extends StatefulWidget {
 
 class _LibraryState extends State<Library> {
   String? username;
+  String? accountId;
 
   @override
   void initState() {
@@ -88,19 +89,18 @@ class _LibraryState extends State<Library> {
     User? user = await getUserData();
     setState(() {
       username = user?.username;
+      accountId = user?.uid;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (username == null) {
+    if (username == null || accountId == null) {
       return Center(
         child: CircularProgressIndicator(),
       );
     }
-
-    // Chỉ hiển thị LibraryScreen khi username đã được cập nhật
-    return LibraryScreen(username: username!);
+    return LibraryScreen(username: username!, accountId: accountId!);
   }
 }
 
