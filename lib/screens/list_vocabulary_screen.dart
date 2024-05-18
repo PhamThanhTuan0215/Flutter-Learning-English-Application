@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:application_learning_english/config.dart';
-import 'package:application_learning_english/flashCard.dart';
+import 'package:application_learning_english/screens/Vocab_learning/card_learning/flash_card/flashCard.dart';
 import 'package:application_learning_english/models/topic.dart';
 import 'package:application_learning_english/models/word.dart';
 import 'package:application_learning_english/screens/Vocab_learning/main_menu.dart';

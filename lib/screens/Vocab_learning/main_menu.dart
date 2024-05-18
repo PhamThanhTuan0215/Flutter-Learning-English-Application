@@ -1,4 +1,4 @@
-import 'package:application_learning_english/flashCard.dart';
+import 'package:application_learning_english/screens/Vocab_learning/card_learning/card_setting.dart';
 import 'package:application_learning_english/screens/Vocab_learning/quiz_learning/quizSetting.dart';
 import 'package:application_learning_english/screens/Vocab_learning/typing_learning/TypingPracticeScreen.dart';
 import 'package:application_learning_english/models/word.dart';
@@ -26,7 +26,6 @@ class _MainMenuState extends State<MainMenu> {
   void getDataWord() {
     vietnameseWords = widget.words.map((word) => word.vietnamese).toList();
     englishWords = widget.words.map((word) => word.english).toList();
-    print(vietnameseWords);
   }
 
   @override
@@ -44,7 +43,9 @@ class _MainMenuState extends State<MainMenu> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => FlashCard(),
+                    builder: (context) => CardSettingsScreen(
+                      words: widget.words,
+                    ),
                   ),
                 );
               },
