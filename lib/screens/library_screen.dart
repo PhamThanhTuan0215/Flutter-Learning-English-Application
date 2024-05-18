@@ -503,7 +503,6 @@ class _LibraryScreenState extends State<LibraryScreen>
           tabs: [
             Tab(text: 'My Sets'),
             Tab(text: 'Folders'),
-            Tab(text: ''),
           ],
         ),
       ),
