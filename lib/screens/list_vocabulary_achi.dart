@@ -139,6 +139,7 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
       },
     );
   }
+
   void updateWord(Word word) {
     setState(() {
       int index = widget.words.indexWhere((w) => w.id == word.id);
@@ -202,7 +203,7 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
         ),
         title: Center(child: Text('Vocabulary List')),
         actions: [
-          if(widget.isEnableEdit) 
+          if (widget.isEnableEdit)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: SizedBox(
@@ -220,15 +221,14 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
                 ),
               ),
             ),
-          if(!widget.isEnableEdit)
+          if (!widget.isEnableEdit)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: SizedBox(
                 width: 40,
                 height: 40,
                 child: IconButton(
-                  onPressed: () {
-                  },
+                  onPressed: () {},
                   icon: Icon(
                     Icons.my_library_add,
                     size: 30,
@@ -247,25 +247,23 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
             itemCount: widget.words.length,
             itemBuilder: (context, index) {
               return WordItem(
-                word: widget.words[index],
-                onDelete: deleteWord,
-                onUpdate: updateWord,
-                isEnableEdit: widget.isEnableEdit
-
-              );
+                  word: widget.words[index],
+                  onDelete: deleteWord,
+                  onUpdate: updateWord,
+                  isEnableEdit: widget.isEnableEdit);
             },
           ),
         ),
       ),
-      
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => LeaderBoards(topicId: widget.topic.id)),
+            MaterialPageRoute(
+                builder: (context) => LeaderBoards(topicId: widget.topic.id)),
           );
         },
-        child: Icon(Icons.school),
+        child: Icon(Icons.emoji_events),
       ),
     );
   }

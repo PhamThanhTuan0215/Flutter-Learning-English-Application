@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:application_learning_english/loginPage.dart';
+import 'package:application_learning_english/toastify/account.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -18,6 +20,7 @@ class _MyRegisterState extends State<MyRegister> {
   TextEditingController nameController = TextEditingController();
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
+  TextEditingController confirmPasswordController = TextEditingController();
   bool _isNotValite = false;
   bool _isLoading = false;
 
@@ -28,26 +31,37 @@ class _MyRegisterState extends State<MyRegister> {
 
     if (emailController.text.isNotEmpty &&
         passwordController.text.isNotEmpty &&
+        confirmPasswordController.text.isNotEmpty &&
         nameController.text.isNotEmpty) {
-      var reqBody = {
-        'fullName': nameController.text,
-        'email': emailController.text,
-        'password': passwordController.text
-      };
+      if (confirmPasswordController.text == passwordController.text) {
+        var reqBody = {
+          'fullName': nameController.text,
+          'email': emailController.text,
+          'password': passwordController.text
+        };
 
-      var res = await http.post(Uri.parse(urlRoot + '/accounts/register'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(reqBody));
+        var res = await http.post(Uri.parse(urlRoot + '/accounts/register'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(reqBody));
 
-      var jsonResponse = jsonDecode(res.body);
-      setState(() {
-        _isLoading = false;
-      });
+        var jsonResponse = jsonDecode(res.body);
+        setState(() {
+          _isLoading = false;
+        });
 
-      if (jsonResponse['code'] == 0) {
-        Navigator.pushNamed(context, 'login');
+        if (jsonResponse['code'] == 0) {
+          Navigator.pushNamed(context, 'login');
+        } else {
+          print(jsonResponse['message']);
+        }
       } else {
-        print(jsonResponse['message']);
+        setState(() {
+          _isLoading = false;
+        });
+        showErrorToast(
+            context: context,
+            title: 'Error',
+            description: 'Password and confirm password is not same!');
       }
     } else {
       setState(() {
@@ -177,6 +191,36 @@ class _MyRegisterState extends State<MyRegister> {
                                   )),
                             ),
                             SizedBox(
+                              height: 30,
+                            ),
+                            TextField(
+                              controller: confirmPasswordController,
+                              style: TextStyle(color: Colors.white),
+                              obscureText: true,
+                              decoration: InputDecoration(
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: BorderSide(
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: BorderSide(
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                  errorStyle: TextStyle(color: Colors.white),
+                                  errorText: _isNotValite
+                                      ? "Enter confirm password"
+                                      : null,
+                                  hintText: "Confirm password",
+                                  hintStyle: TextStyle(color: Colors.white),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  )),
+                            ),
+                            SizedBox(
                               height: 40,
                             ),
                             Row(
@@ -211,7 +255,10 @@ class _MyRegisterState extends State<MyRegister> {
                               children: [
                                 TextButton(
                                   onPressed: () {
-                                    Navigator.pushNamed(context, 'login');
+                                    Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) => MyLogin()));
                                   },
                                   child: Text(
                                     'Sign In',
