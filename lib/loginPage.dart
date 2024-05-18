@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:application_learning_english/forgotPassword.dart';
+import 'registration.dart';
 import 'package:application_learning_english/toastify/account.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -192,7 +193,11 @@ class _MyLoginState extends State<MyLogin> {
                               children: [
                                 TextButton(
                                   onPressed: () {
-                                    Navigator.pushNamed(context, 'register');
+                                    Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                MyRegister()));
                                   },
                                   child: Text(
                                     'Sign Up',

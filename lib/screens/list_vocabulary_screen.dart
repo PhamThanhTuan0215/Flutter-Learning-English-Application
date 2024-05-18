@@ -4,6 +4,7 @@ import 'package:application_learning_english/config.dart';
 import 'package:application_learning_english/flashCard.dart';
 import 'package:application_learning_english/models/topic.dart';
 import 'package:application_learning_english/models/word.dart';
+import 'package:application_learning_english/screens/Vocab_learning/main_menu.dart';
 import 'package:application_learning_english/widgets/word_item.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -332,7 +333,9 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const FlashCard(),
+              builder: (context) => MainMenu(
+                words: widget.words,
+              ),
             ),
           );
         },

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flip_card/flip_card.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
 import './flashCard/all_constants.dart';
 import './flashCard/ques_ans_file.dart';
@@ -19,9 +19,12 @@ class _FlashCardState extends State<FlashCard> {
   double _initial = 0.1;
   bool isFlipped = false;
   bool autoFlippedEnable = false;
+  double _startX = 0;
+  double _endX = 0;
   Timer? flipTimer;
   Timer? changeCardTimer;
   final GlobalKey<FlipCardState> cardKey = GlobalKey<FlipCardState>();
+  FlutterTts flutterTts = FlutterTts();
 
   @override
   void initState() {
@@ -76,7 +79,8 @@ class _FlashCardState extends State<FlashCard> {
 
   @override
   Widget build(BuildContext context) {
-    String value = (_initial * 10).toStringAsFixed(0);
+    String value = "${_currentIndexNumber + 1} of ${quesAnsList.length}";
+
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
@@ -107,7 +111,7 @@ class _FlashCardState extends State<FlashCard> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text("Question $value of 10 Completed", style: otherTextStyle),
+            Text("Question $value Completed", style: otherTextStyle),
             SizedBox(height: 20),
             Padding(
               padding: const EdgeInsets.all(10.0),
@@ -122,40 +126,30 @@ class _FlashCardState extends State<FlashCard> {
             GestureDetector(
               onHorizontalDragStart: (details) {
                 // Xác định vị trí bắt đầu của sự kiện lướt ngang
-                final RenderBox box = context.findRenderObject() as RenderBox;
-                final Offset localOffset =
-                    box.globalToLocal(details.globalPosition);
-
-                // Kiểm tra xem vị trí bắt đầu có nằm trong phạm vi của thẻ không
-                final bool isInsideCard =
-                    localOffset.dx >= 0 && localOffset.dx <= box.size.width;
-
-                // Nếu vị trí bắt đầu nằm trong thẻ, không thực hiện chuyển thẻ tự động
-                if (isInsideCard) {
-                  stopAutoFlip();
-                }
+                _startX = details.globalPosition.dx;
+                stopAutoFlip();
               },
               onHorizontalDragUpdate: (details) {
-                // Xác định vị trí cập nhật của sự kiện lướt ngang
-                final RenderBox box = context.findRenderObject() as RenderBox;
-                final Offset localOffset =
-                    box.globalToLocal(details.globalPosition);
-
-                // Kiểm tra xem vị trí cập nhật có nằm trong phạm vi của thẻ không
-                final bool isInsideCard =
-                    localOffset.dx >= 0 && localOffset.dx <= box.size.width;
-
-                // Nếu vị trí cập nhật nằm trong thẻ, không thực hiện chuyển thẻ tự động
-                if (isInsideCard) {
-                  stopAutoFlip();
-                }
+                // Cập nhật vị trí khi lướt ngang
+                _endX = details.globalPosition.dx;
               },
               onHorizontalDragEnd: (details) {
-                final velocity = details.primaryVelocity!;
-                if (velocity > 0) {
-                  showPreviousCard();
-                } else if (velocity < 0) {
-                  showNextCard();
+                // Tính toán tốc độ
+                final double velocity =
+                    (_endX - _startX).abs() / details.primaryVelocity!;
+
+                // Xác định hướng và chỉ thực hiện chuyển thẻ khi tốc độ đủ lớn
+                if (velocity > 1000) {
+                  final double delta = _endX - _startX;
+                  if (delta > 0) {
+                    if (_currentIndexNumber > 0) {
+                      showPreviousCard();
+                    }
+                  } else {
+                    if (_currentIndexNumber < quesAnsList.length - 1) {
+                      showNextCard();
+                    }
+                  }
                 }
               },
               child: SizedBox(
@@ -172,9 +166,21 @@ class _FlashCardState extends State<FlashCard> {
                         isFlipped = !isFlipped;
                       });
                     },
-                    child: ReusableCard(
-                      text: quesAnsList[_currentIndexNumber].question,
-                    ),
+                    child: Stack(children: [
+                      ReusableCard(
+                        text: quesAnsList[_currentIndexNumber].question,
+                      ),
+                      Positioned(
+                          top: 10, // Điều chỉnh vị trí từ top
+                          right: 10,
+                          child: IconButton(
+                            icon: Icon(Icons.volume_up),
+                            onPressed: () {
+                              flutterTts.speak(
+                                  quesAnsList[_currentIndexNumber].question!);
+                            },
+                          ))
+                    ]),
                   ),
                   back: GestureDetector(
                     onTap: () {
@@ -183,9 +189,21 @@ class _FlashCardState extends State<FlashCard> {
                         isFlipped = !isFlipped;
                       });
                     },
-                    child: ReusableCard(
-                      text: quesAnsList[_currentIndexNumber].answer,
-                    ),
+                    child: Stack(children: [
+                      ReusableCard(
+                        text: quesAnsList[_currentIndexNumber].answer,
+                      ),
+                      Positioned(
+                          top: 10, // Điều chỉnh vị trí từ top
+                          right: 10,
+                          child: IconButton(
+                            icon: Icon(Icons.volume_up),
+                            onPressed: () {
+                              flutterTts.speak(
+                                  quesAnsList[_currentIndexNumber].answer!);
+                            },
+                          ))
+                    ]),
                   ),
                 ),
               ),
@@ -200,27 +218,24 @@ class _FlashCardState extends State<FlashCard> {
 
   void updateToNext() {
     setState(() {
-      _initial = _initial + 0.1;
-      if (_initial > 1.0) {
-        _initial = 0.1;
-      }
+      _currentIndexNumber = (_currentIndexNumber + 1) % quesAnsList.length;
+      _initial = (_currentIndexNumber + 1) / quesAnsList.length;
     });
   }
 
   void updateToPrev() {
     setState(() {
-      _initial = _initial - 0.1;
-      if (_initial < 0.1) {
-        _initial = 1.0;
-      }
+      _currentIndexNumber = (_currentIndexNumber - 1 >= 0)
+          ? _currentIndexNumber - 1
+          : quesAnsList.length - 1;
+      _initial = (_currentIndexNumber + 1) / quesAnsList.length;
     });
   }
 
   void showNextCard() {
     setState(() {
-      _currentIndexNumber = (_currentIndexNumber + 1 < quesAnsList.length)
-          ? _currentIndexNumber + 1
-          : 0;
+      _currentIndexNumber = (_currentIndexNumber + 1) % quesAnsList.length;
+      _initial = (_currentIndexNumber + 1) / quesAnsList.length;
     });
   }
 
@@ -229,6 +244,7 @@ class _FlashCardState extends State<FlashCard> {
       _currentIndexNumber = (_currentIndexNumber - 1 >= 0)
           ? _currentIndexNumber - 1
           : quesAnsList.length - 1;
+      _initial = (_currentIndexNumber + 1) / quesAnsList.length;
     });
   }
 }
