@@ -223,6 +223,7 @@ class _TopicItemState extends State<TopicItem> {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () async {
+        await fetchVocabulary();
         var isUpdateAmount = await Navigator.push(
           context,
           MaterialPageRoute(
