@@ -8,6 +8,10 @@ import 'package:application_learning_english/widgets/word_item.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import "package:shared_preferences/shared_preferences.dart";
+import '../utils/sessionUser.dart';
+
+import '../user.dart';
 
 class ListVocabularyScreen extends StatefulWidget {
   final List<Word> words;
@@ -29,6 +33,20 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
   final urlRoot = kIsWeb ? WEB_URL : ANDROID_URL;
   bool isUpdateAmount = false;
 
+  late SharedPreferences prefs;
+  User? user;
+
+  @override
+  void initState() {
+    super.initState();
+    loadUser();
+    // futureAchievement = fetchAchievement();
+  }
+
+  loadUser() async {
+    user = await getUserData();
+    setState(() {});
+  }
   void deleteWord(String wordId) {
     setState(() {
       widget.words.removeWhere((word) => word.id == wordId);
@@ -149,6 +167,45 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
     });
   }
 
+  Future<void> addTopicToUser() async {
+    try {
+      var response = await http.post(
+          Uri.parse('${urlRoot}/topics/${widget.topic.id}/borrow-topic/${user!.username}'),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          });
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(data['message'].toString()),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(data['message'].toString()),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to add topic to user'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        throw Exception('Failed to add topic to user');
+      }
+    } catch (err) {
+      print(err);
+    }
+  }
+
   Future<void> addWords(listWord) async {
     try {
       var response = await http.post(
@@ -192,6 +249,33 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
     }
   }
 
+  void _showConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Confirm"),
+          content: Text("Are you sure you want to add this topic?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Đóng Dialog
+              },
+              child: Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Đóng Dialog
+                addTopicToUser(); // Gọi hàm addTopicToUser()
+              },
+              child: Text("Confirm"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -228,7 +312,9 @@ class _ListVocabularyScreenState extends State<ListVocabularyScreen> {
                 width: 40,
                 height: 40,
                 child: IconButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    _showConfirmationDialog(context);
+                  },
                   icon: Icon(
                     Icons.my_library_add,
                     size: 30,
