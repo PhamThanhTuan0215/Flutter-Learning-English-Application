@@ -51,6 +51,7 @@ class _PopularFlashcardState extends State<PopularFlashcard> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text('Popular topic'),
         centerTitle: true,
         actions: [
