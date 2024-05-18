@@ -3,18 +3,30 @@ import 'package:flutter/material.dart';
 import 'package:flip_card/flip_card.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
-import './flashCard/all_constants.dart';
-import './flashCard/ques_ans_file.dart';
-import './flashCard/reusable_card.dart';
+import 'all_constants.dart';
+import 'reusable_card.dart';
+import 'package:application_learning_english/models/word.dart';
 
 class FlashCard extends StatefulWidget {
-  const FlashCard({super.key});
+  final List<Word> words;
+  final bool isShuffle;
+  final bool isEnglish;
+  final bool autoPronounce;
+
+  const FlashCard({
+    Key? key,
+    required this.words,
+    required this.isShuffle,
+    required this.autoPronounce,
+    required this.isEnglish,
+  }) : super(key: key);
 
   @override
   State<FlashCard> createState() => _FlashCardState();
 }
 
 class _FlashCardState extends State<FlashCard> {
+  late List<Map<String, String>> wordPairs;
   int _currentIndexNumber = 0;
   double _initial = 0.1;
   bool isFlipped = false;
@@ -32,6 +44,19 @@ class _FlashCardState extends State<FlashCard> {
     if (autoFlippedEnable) {
       startAutoFlip();
     }
+    getDataWord();
+    if (widget.isShuffle) {
+      wordPairs.shuffle();
+    }
+    if (widget.autoPronounce) {
+      pronounceCurrentWord();
+    }
+  }
+
+  void getDataWord() {
+    wordPairs = widget.words.map((word) {
+      return {'english': word.english, 'vietnamese': word.vietnamese};
+    }).toList();
   }
 
   @override
@@ -77,9 +102,16 @@ class _FlashCardState extends State<FlashCard> {
     });
   }
 
+  void pronounceCurrentWord() {
+    String textToSpeak = wordPairs[_currentIndexNumber][isFlipped
+        ? (widget.isEnglish ? 'vietnamese' : 'english')
+        : (widget.isEnglish ? 'english' : 'vietnamese')]!;
+    flutterTts.speak(textToSpeak);
+  }
+
   @override
   Widget build(BuildContext context) {
-    String value = "${_currentIndexNumber + 1} of ${quesAnsList.length}";
+    String value = "${_currentIndexNumber + 1} of ${wordPairs.length}";
 
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
@@ -125,20 +157,15 @@ class _FlashCardState extends State<FlashCard> {
             SizedBox(height: 25),
             GestureDetector(
               onHorizontalDragStart: (details) {
-                // Xác định vị trí bắt đầu của sự kiện lướt ngang
                 _startX = details.globalPosition.dx;
                 stopAutoFlip();
               },
               onHorizontalDragUpdate: (details) {
-                // Cập nhật vị trí khi lướt ngang
                 _endX = details.globalPosition.dx;
               },
               onHorizontalDragEnd: (details) {
-                // Tính toán tốc độ
                 final double velocity =
                     (_endX - _startX).abs() / details.primaryVelocity!;
-
-                // Xác định hướng và chỉ thực hiện chuyển thẻ khi tốc độ đủ lớn
                 if (velocity > 1000) {
                   final double delta = _endX - _startX;
                   if (delta > 0) {
@@ -146,7 +173,7 @@ class _FlashCardState extends State<FlashCard> {
                       showPreviousCard();
                     }
                   } else {
-                    if (_currentIndexNumber < quesAnsList.length - 1) {
+                    if (_currentIndexNumber < wordPairs.length - 1) {
                       showNextCard();
                     }
                   }
@@ -165,19 +192,25 @@ class _FlashCardState extends State<FlashCard> {
                       setState(() {
                         isFlipped = !isFlipped;
                       });
+                      if (widget.autoPronounce) {
+                        pronounceCurrentWord();
+                      }
                     },
                     child: Stack(children: [
                       ReusableCard(
-                        text: quesAnsList[_currentIndexNumber].question,
+                        text: wordPairs[_currentIndexNumber]
+                            [widget.isEnglish ? 'english' : 'vietnamese']!,
                       ),
                       Positioned(
-                          top: 10, // Điều chỉnh vị trí từ top
+                          top: 10,
                           right: 10,
                           child: IconButton(
                             icon: Icon(Icons.volume_up),
                             onPressed: () {
-                              flutterTts.speak(
-                                  quesAnsList[_currentIndexNumber].question!);
+                              flutterTts.speak(wordPairs[_currentIndexNumber][
+                                  widget.isEnglish
+                                      ? 'english'
+                                      : 'vietnamese']!);
                             },
                           ))
                     ]),
@@ -188,19 +221,25 @@ class _FlashCardState extends State<FlashCard> {
                       setState(() {
                         isFlipped = !isFlipped;
                       });
+                      if (widget.autoPronounce) {
+                        pronounceCurrentWord();
+                      }
                     },
                     child: Stack(children: [
                       ReusableCard(
-                        text: quesAnsList[_currentIndexNumber].answer,
+                        text: wordPairs[_currentIndexNumber]
+                            [widget.isEnglish ? 'vietnamese' : 'english']!,
                       ),
                       Positioned(
-                          top: 10, // Điều chỉnh vị trí từ top
+                          top: 10,
                           right: 10,
                           child: IconButton(
                             icon: Icon(Icons.volume_up),
                             onPressed: () {
-                              flutterTts.speak(
-                                  quesAnsList[_currentIndexNumber].answer!);
+                              flutterTts.speak(wordPairs[_currentIndexNumber][
+                                  widget.isEnglish
+                                      ? 'vietnamese'
+                                      : 'english']!);
                             },
                           ))
                     ]),
@@ -208,7 +247,7 @@ class _FlashCardState extends State<FlashCard> {
                 ),
               ),
             ),
-            Text("Tap to see Answer", style: otherTextStyle),
+            Text("Tap to view", style: otherTextStyle),
             SizedBox(height: 20),
           ],
         ),
@@ -218,33 +257,45 @@ class _FlashCardState extends State<FlashCard> {
 
   void updateToNext() {
     setState(() {
-      _currentIndexNumber = (_currentIndexNumber + 1) % quesAnsList.length;
-      _initial = (_currentIndexNumber + 1) / quesAnsList.length;
+      _currentIndexNumber = (_currentIndexNumber + 1) % wordPairs.length;
+      _initial = (_currentIndexNumber + 1) / wordPairs.length;
     });
+    if (widget.autoPronounce) {
+      pronounceCurrentWord();
+    }
   }
 
   void updateToPrev() {
     setState(() {
       _currentIndexNumber = (_currentIndexNumber - 1 >= 0)
           ? _currentIndexNumber - 1
-          : quesAnsList.length - 1;
-      _initial = (_currentIndexNumber + 1) / quesAnsList.length;
+          : wordPairs.length - 1;
+      _initial = (_currentIndexNumber + 1) / wordPairs.length;
     });
+    if (widget.autoPronounce) {
+      pronounceCurrentWord();
+    }
   }
 
   void showNextCard() {
     setState(() {
-      _currentIndexNumber = (_currentIndexNumber + 1) % quesAnsList.length;
-      _initial = (_currentIndexNumber + 1) / quesAnsList.length;
+      _currentIndexNumber = (_currentIndexNumber + 1) % wordPairs.length;
+      _initial = (_currentIndexNumber + 1) / wordPairs.length;
     });
+    if (widget.autoPronounce) {
+      pronounceCurrentWord();
+    }
   }
 
   void showPreviousCard() {
     setState(() {
       _currentIndexNumber = (_currentIndexNumber - 1 >= 0)
           ? _currentIndexNumber - 1
-          : quesAnsList.length - 1;
-      _initial = (_currentIndexNumber + 1) / quesAnsList.length;
+          : wordPairs.length - 1;
+      _initial = (_currentIndexNumber + 1) / wordPairs.length;
     });
+    if (widget.autoPronounce) {
+      pronounceCurrentWord();
+    }
   }
 }

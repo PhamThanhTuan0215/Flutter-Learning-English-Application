@@ -4,7 +4,6 @@ import 'package:application_learning_english/screens/popular_flashcard.dart';
 import 'package:application_learning_english/user.dart';
 import 'package:application_learning_english/utils/sessionUser.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(MyApp());
