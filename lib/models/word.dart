@@ -9,6 +9,10 @@ class Word {
   final int numberCorrect;
   final String status;
 
+  bool isLocked;
+  String? selectedOption;
+  List<String> options;
+
   Word({
     required this.id,
     required this.username,
@@ -19,6 +23,9 @@ class Word {
     required this.isStarred,
     required this.numberCorrect,
     required this.status,
+    this.isLocked = false,
+    this.selectedOption,
+    this.options = const [],
   });
 
   factory Word.fromJson(Map<String, dynamic> json) {
@@ -32,6 +39,7 @@ class Word {
       isStarred: json['isStarred'],
       numberCorrect: json['numberCorrect'],
       status: json['status'],
+      options: List<String>.from(json['options'] ?? []),
     );
   }
 }

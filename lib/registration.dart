@@ -50,9 +50,14 @@ class _MyRegisterState extends State<MyRegister> {
         });
 
         if (jsonResponse['code'] == 0) {
-          Navigator.pushNamed(context, 'login');
+          Navigator.push(
+              context, MaterialPageRoute(builder: (context) => MyLogin()));
+          showSuccessToast(
+              context: context,
+              title: 'Success',
+              description: 'Create account successfully');
         } else {
-          print(jsonResponse['message']);
+          print(jsonResponse['data']);
         }
       } else {
         setState(() {

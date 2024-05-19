@@ -1,7 +1,12 @@
-import 'package:application_learning_english/screens/Vocab_learning/quiz_learning/quiz_screen.dart';
+import 'package:application_learning_english/screens/Vocab_learning/quiz_learning/quiz_widget/quiz_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:application_learning_english/models/word.dart';
 
 class QuizSettingsScreen extends StatefulWidget {
+  final List<Word> words;
+
+  const QuizSettingsScreen({Key? key, required this.words}) : super(key: key);
+
   @override
   _QuizSettingsScreenState createState() => _QuizSettingsScreenState();
 }
@@ -17,6 +22,13 @@ class _QuizSettingsScreenState extends State<QuizSettingsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Quiz Settings'),
+        // Thêm nút trở về
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -76,10 +88,10 @@ class _QuizSettingsScreenState extends State<QuizSettingsScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => QuizScreen(
-                      numberOfQuestions: numberOfQuestions,
-                      englishToVietnamese: englishToVietnamese,
+                      words: widget.words,
+                      isEnglish: englishToVietnamese,
                       autoPronounce: autoPronounce,
-                      shuffleQuestions: shuffleQuestions,
+                      isShuffle: shuffleQuestions,
                     ),
                   ),
                 );

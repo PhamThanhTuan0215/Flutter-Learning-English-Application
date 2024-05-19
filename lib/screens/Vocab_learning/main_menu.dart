@@ -56,7 +56,8 @@ class _MainMenuState extends State<MainMenu> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => QuizSettingsScreen(),
+                    builder: (context) =>
+                        QuizSettingsScreen(words: widget.words),
                   ),
                 );
               },
