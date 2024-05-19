@@ -27,9 +27,11 @@ class _MyLoginState extends State<MyLogin> {
   bool _isLoading = false;
   late SharedPreferences prefs;
 
+  // Biến để quản lý trạng thái ẩn hiện của mật khẩu
+  bool _obscureText = true;
+
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     initSharedPref();
   }
@@ -146,7 +148,7 @@ class _MyLoginState extends State<MyLogin> {
                             TextField(
                               controller: passwordController,
                               style: TextStyle(),
-                              obscureText: true,
+                              obscureText: _obscureText,
                               decoration: InputDecoration(
                                   fillColor: Colors.grey.shade100,
                                   filled: true,
@@ -157,6 +159,18 @@ class _MyLoginState extends State<MyLogin> {
                                   hintText: "Password",
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _obscureText
+                                          ? Icons.visibility
+                                          : Icons.visibility_off,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _obscureText = !_obscureText;
+                                      });
+                                    },
                                   )),
                             ),
                             SizedBox(

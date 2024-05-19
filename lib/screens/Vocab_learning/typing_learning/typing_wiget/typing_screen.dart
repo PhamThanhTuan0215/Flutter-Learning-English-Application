@@ -1,21 +1,46 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'data.dart';
 import 'package:application_learning_english/models/word.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:application_learning_english/config.dart';
-import 'package:application_learning_english/user.dart';
-import 'package:application_learning_english/utils/sessionUser.dart';
 
-class QuizScreen extends StatefulWidget {
+class Question {
+  final String questionText;
+  final String correctAnswer;
+  String? userAnswer; // The answer inputted by the user
+  final Word word; // Thêm biến word để lưu thông tin từ
+
+  Question(this.questionText, this.correctAnswer, this.word);
+}
+
+List<Question> getQuestions(
+    List<Word> words, bool isShuffle, bool englishToVietnamese) {
+  List<Map<String, dynamic>> wordPairs = words.map((word) {
+    return {
+      'english': englishToVietnamese ? word.english : word.vietnamese,
+      'vietnamese': englishToVietnamese ? word.vietnamese : word.english,
+      'word': word, // Thêm biến word vào map
+    };
+  }).toList();
+
+  if (isShuffle) wordPairs.shuffle();
+
+  return wordPairs.map((wordPair) {
+    return Question(
+        wordPair['english']!, wordPair['vietnamese']!, wordPair['word']);
+  }).toList();
+}
+
+class TypingScreen extends StatefulWidget {
   final List<Word> words;
   final bool isShuffle;
   final bool isEnglish;
   final bool autoPronounce;
 
-  const QuizScreen({
+  const TypingScreen({
     Key? key,
     required this.words,
     required this.isShuffle,
@@ -24,39 +49,31 @@ class QuizScreen extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<QuizScreen> createState() => _QuizScreenState();
+  State<TypingScreen> createState() => _TypingScreenState();
 }
 
-class _QuizScreenState extends State<QuizScreen> {
+class _TypingScreenState extends State<TypingScreen> {
   final urlRoot = kIsWeb ? WEB_URL : ANDROID_URL;
-  User? user;
 
   late List<Question> questionList;
-  int? selectedIndex; // Trạng thái index của đáp án đã được chọn
-
   late FlutterTts flutterTts;
   List<Word> correctWords = [];
+
+  TextEditingController answerController = TextEditingController();
+  int currentQuestionIndex = 0;
+  int score = 0;
 
   @override
   void initState() {
     super.initState();
     questionList =
         getQuestions(widget.words, widget.isShuffle, widget.isEnglish);
-    flutterTts = FlutterTts(); // Khởi tạo FlutterTts trong initState
+    flutterTts = FlutterTts();
 
     if (widget.autoPronounce) {
       _speak(questionList[currentQuestionIndex].questionText);
     }
-    loadUser();
   }
-
-  loadUser() async {
-    user = await getUserData();
-    setState(() {});
-  }
-
-  int currentQuestionIndex = 0;
-  int score = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -77,8 +94,8 @@ class _QuizScreenState extends State<QuizScreen> {
           children: [
             _buildHeader(),
             _buildQuestionWidget(),
-            _buildAnswerList(),
-            _buildNavigationButtons()
+            _buildAnswerInput(),
+            _buildNavigationButtons(),
           ],
         ),
       ),
@@ -87,9 +104,9 @@ class _QuizScreenState extends State<QuizScreen> {
 
   Widget _buildHeader() {
     return const Text(
-      "Simple Quiz App",
+      "Typing Quiz App",
       style: TextStyle(
-        color: Colors.white,
+        color: Colors.black,
         fontSize: 24,
       ),
     );
@@ -99,7 +116,8 @@ class _QuizScreenState extends State<QuizScreen> {
     setState(() {
       if (currentQuestionIndex > 0) {
         currentQuestionIndex--;
-        selectedIndex = questionList[currentQuestionIndex].selectedAnswerIndex;
+        answerController.text =
+            questionList[currentQuestionIndex].userAnswer ?? '';
         if (widget.autoPronounce) {
           _speak(questionList[currentQuestionIndex].questionText);
         }
@@ -131,12 +149,14 @@ class _QuizScreenState extends State<QuizScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                questionList[currentQuestionIndex].questionText,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
+              Expanded(
+                child: Text(
+                  questionList[currentQuestionIndex].questionText,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               IconButton(
@@ -151,66 +171,14 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  Widget _buildAnswerList() {
-    return Column(
-      children: questionList[currentQuestionIndex]
-          .answersList
-          .asMap()
-          .entries
-          .map((entry) => _buildAnswerButton(entry.key, entry.value))
-          .toList(),
-    );
-  }
-
-  Widget _buildAnswerButton(int index, Answer answer) {
-    bool isSelected = index == selectedIndex;
-
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      height: 48,
-      child: ElevatedButton(
-        child: Text(answer.answerText),
-        style: ButtonStyle(
-          shape: MaterialStateProperty.all(const StadiumBorder()),
-          backgroundColor: MaterialStateProperty.resolveWith<Color>((states) {
-            if (states.contains(MaterialState.pressed) || isSelected) {
-              return Colors.orangeAccent;
-            }
-            return Colors.white;
-          }),
-          foregroundColor: MaterialStateProperty.resolveWith<Color>((states) {
-            if (states.contains(MaterialState.pressed) || isSelected) {
-              return Colors.white;
-            }
-            return Colors.black;
-          }),
-        ),
-        onPressed: () {
-          _selectAnswer(index);
-        },
+  Widget _buildAnswerInput() {
+    return TextField(
+      controller: answerController,
+      decoration: InputDecoration(
+        border: OutlineInputBorder(),
+        labelText: 'Type your answer here',
       ),
     );
-  }
-
-  void _selectAnswer(int index) {
-    setState(() {
-      if (selectedIndex == index) {
-        // Nếu người dùng chọn lại câu trả lời đã chọn trước đó,
-        // selectedIndex sẽ trở thành null để hủy chọn câu trả lời.
-        selectedIndex = null;
-      } else {
-        // Ngược lại, cập nhật selectedIndex với câu trả lời mới được chọn.
-        selectedIndex = index;
-        questionList[currentQuestionIndex].selectedAnswerIndex = index;
-        if (questionList[currentQuestionIndex].answersList[index].isCorrect) {
-          // Nếu câu trả lời được chọn là đúng, tăng điểm
-          score++;
-          // Add the correct word to the list of correct words
-          correctWords.add(widget.words[currentQuestionIndex]);
-        }
-      }
-    });
   }
 
   Widget _buildNavigationButtons() {
@@ -261,7 +229,28 @@ class _QuizScreenState extends State<QuizScreen> {
                 return Colors.white;
               }),
             ),
-            onPressed: isLastQuestion ? _showScoreDialog : _nextQuestion,
+            onPressed: () {
+              if (isLastQuestion) {
+                if (answerController.text.isNotEmpty) {
+                  questionList[currentQuestionIndex].userAnswer =
+                      answerController.text;
+                  if (questionList[currentQuestionIndex]
+                          .userAnswer!
+                          .trim()
+                          .toLowerCase() ==
+                      questionList[currentQuestionIndex]
+                          .correctAnswer
+                          .trim()
+                          .toLowerCase()) {
+                    score++;
+                    correctWords.add(questionList[currentQuestionIndex].word);
+                  }
+                }
+                _showScoreDialog();
+              } else {
+                _nextQuestion();
+              }
+            },
           ),
         ),
       ],
@@ -269,50 +258,62 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   void _nextQuestion() {
-    if (selectedIndex == null) {
+    if (answerController.text.isEmpty) {
+      // Hiển thị cảnh báo nếu người dùng không nhập câu trả lời
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Please select an answer.'),
+          content: Text('Please type an answer.'),
         ),
       );
-      return;
+      return; // Dừng hàm và không thực hiện tiếp các thao tác khác
     }
 
     setState(() {
-      selectedIndex = null;
-      currentQuestionIndex++;
-      if (widget.autoPronounce) {
-        _speak(questionList[currentQuestionIndex].questionText);
+      questionList[currentQuestionIndex].userAnswer = answerController.text;
+      if (questionList[currentQuestionIndex].userAnswer!.trim().toLowerCase() ==
+          questionList[currentQuestionIndex]
+              .correctAnswer
+              .trim()
+              .toLowerCase()) {
+        score++;
+        correctWords.add(questionList[currentQuestionIndex].word);
+      }
+
+      if (currentQuestionIndex < questionList.length - 1) {
+        currentQuestionIndex++;
+        answerController.clear(); // Clear the text field
+        if (widget.autoPronounce) {
+          _speak(questionList[currentQuestionIndex].questionText);
+        }
+      } else {
+        _showScoreDialog();
       }
     });
   }
 
-  void _showScoreDialog() async {
+  void _showScoreDialog() {
     bool isPassed = score >= questionList.length * 0.6;
     String title = isPassed ? "Passed" : "Failed";
 
-    List<Widget> resultWidgets = [];
+    List<Widget> resultWidgets =
+        []; // Danh sách widget để hiển thị kết quả từng câu hỏi
 
     for (int i = 0; i < questionList.length; i++) {
       Question question = questionList[i];
-      Answer selectedAnswer =
-          question.answersList[question.selectedAnswerIndex!];
-      bool isCorrect = selectedAnswer.isCorrect;
+      bool isCorrect = question.userAnswer?.trim().toLowerCase() ==
+          question.correctAnswer.trim().toLowerCase();
 
       resultWidgets.add(
         ListTile(
           title: Text("Question ${i + 1}: ${question.questionText}"),
           subtitle: Text(
-            "Your answer: ${selectedAnswer.answerText}\n"
-            "Correct answer: ${question.answersList.firstWhere((answer) => answer.isCorrect).answerText}",
+            "Your answer: ${question.userAnswer ?? 'No answer'}\n"
+            "Correct answer: ${question.correctAnswer}",
             style: TextStyle(color: isCorrect ? Colors.green : Colors.red),
           ),
         ),
       );
     }
-
-    await _sendQuizResults(); // Send quiz results before showing the dialog
-    await _sendCorrectWords();
 
     showDialog(
       context: context,
@@ -325,7 +326,7 @@ class _QuizScreenState extends State<QuizScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ...resultWidgets,
+              ...resultWidgets, // Thêm danh sách kết quả từng câu hỏi vào dialog
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -338,6 +339,8 @@ class _QuizScreenState extends State<QuizScreen> {
                     onPressed: () {
                       Navigator.pop(context); // Close the dialog
                       Navigator.pop(context); // Go back to the previous screen
+                      _sendQuizResults(); // Gửi kết quả bài kiểm tra
+                      _sendCorrectWords(); // Gửi danh sách từ đúng
                     },
                   ),
                 ],
@@ -354,7 +357,11 @@ class _QuizScreenState extends State<QuizScreen> {
     setState(() {
       currentQuestionIndex = 0;
       score = 0;
-      selectedIndex = null; // Reset trạng thái khi restart quiz
+      correctWords.clear();
+      answerController.clear();
+      for (var question in questionList) {
+        question.userAnswer = null;
+      }
     });
   }
 

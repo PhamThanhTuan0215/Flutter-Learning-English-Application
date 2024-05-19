@@ -1,14 +1,18 @@
+import 'package:application_learning_english/screens/Vocab_learning/quiz_learning/quiz_widget/quiz_screen.dart';
+import 'package:application_learning_english/screens/Vocab_learning/typing_learning/typing_wiget/typing_screen.dart';
 import 'package:flutter/material.dart';
-import 'typing_screen.dart';
+import 'package:application_learning_english/models/word.dart';
 
-class TypingPracticeSettingsScreen extends StatefulWidget {
+class TypingSettingScreen extends StatefulWidget {
+  final List<Word> words;
+
+  const TypingSettingScreen({Key? key, required this.words}) : super(key: key);
+
   @override
-  _TypingPracticeSettingsScreenState createState() =>
-      _TypingPracticeSettingsScreenState();
+  _TypingSettingScreenState createState() => _TypingSettingScreenState();
 }
 
-class _TypingPracticeSettingsScreenState
-    extends State<TypingPracticeSettingsScreen> {
+class _TypingSettingScreenState extends State<TypingSettingScreen> {
   int numberOfQuestions = 10;
   bool englishToVietnamese = true;
   bool autoPronounce = false;
@@ -18,7 +22,14 @@ class _TypingPracticeSettingsScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Typing Practice Settings'),
+        title: Text('Typing Settings'),
+        // Thêm nút trở về
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -74,19 +85,19 @@ class _TypingPracticeSettingsScreenState
             ),
             ElevatedButton(
               onPressed: () {
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(
-                //     builder: (context) => TypingPracticeSettingsScreen(
-                //       numberOfQuestions: numberOfQuestions,
-                //       englishToVietnamese: englishToVietnamese,
-                //       autoPronounce: autoPronounce,
-                //       shuffleQuestions: shuffleQuestions,
-                //     ),
-                //   ),
-                // );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TypingScreen(
+                      words: widget.words,
+                      isEnglish: englishToVietnamese,
+                      autoPronounce: autoPronounce,
+                      isShuffle: shuffleQuestions,
+                    ),
+                  ),
+                );
               },
-              child: Text('Start Typing Practice'),
+              child: Text('Start Quiz'),
             ),
           ],
         ),
