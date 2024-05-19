@@ -16,13 +16,24 @@ class Answer {
 }
 
 List<Question> getQuestions(
-    List<Word> words, bool isShuffle, bool englishToVietnamese) {
-  List<Map<String, String>> wordPairs = words.map((word) {
-    return {
-      'english': englishToVietnamese ? word.english : word.vietnamese,
-      'vietnamese': englishToVietnamese ? word.vietnamese : word.english,
-    };
-  }).toList();
+    List<Word> words, bool isShuffle, bool englishToVietnamese, bool starCard) {
+  List<Map<String, String>> wordPairs;
+
+  if (starCard) {
+    List<Map<String, String>> getStarredWordPairs(List<Word> words) {
+      return words
+          .where((word) => word.isStarred) // Lọc các từ có isStarred = true
+          .map((word) {
+        return {'english': word.english, 'vietnamese': word.vietnamese};
+      }).toList();
+    }
+
+    wordPairs = getStarredWordPairs(words);
+  } else {
+    wordPairs = words.map((word) {
+      return {'english': word.english, 'vietnamese': word.vietnamese};
+    }).toList();
+  }
 
   if (isShuffle) wordPairs.shuffle();
 

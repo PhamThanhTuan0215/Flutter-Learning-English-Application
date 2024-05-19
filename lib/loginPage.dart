@@ -27,7 +27,6 @@ class _MyLoginState extends State<MyLogin> {
   bool _isLoading = false;
   late SharedPreferences prefs;
 
-  // Biến để quản lý trạng thái ẩn hiện của mật khẩu
   bool _obscureText = true;
 
   @override

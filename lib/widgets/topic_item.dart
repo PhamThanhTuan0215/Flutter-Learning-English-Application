@@ -325,13 +325,15 @@ class _TopicItemState extends State<TopicItem> {
                       children: [
                         Icon(Icons.person, color: Colors.red),
                         SizedBox(width: 10),
-                        Text(
-                          '${widget.topic.owner}',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.black87,
+                        Expanded(
+                          child: Text(
+                            '${widget.topic.owner}',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.black87,
+                            ),
                           ),
-                        ),
+                        )
                       ],
                     ),
                   ],

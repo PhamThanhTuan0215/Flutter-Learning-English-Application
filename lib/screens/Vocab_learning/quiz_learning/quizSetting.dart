@@ -16,6 +16,7 @@ class _QuizSettingsScreenState extends State<QuizSettingsScreen> {
   bool englishToVietnamese = true;
   bool autoPronounce = false;
   bool shuffleQuestions = false;
+  bool starCard = false;
 
   @override
   Widget build(BuildContext context) {
@@ -82,6 +83,15 @@ class _QuizSettingsScreenState extends State<QuizSettingsScreen> {
                 });
               },
             ),
+            SwitchListTile(
+              title: Text('Learn starr card'),
+              value: starCard,
+              onChanged: (bool value) {
+                setState(() {
+                  starCard = value;
+                });
+              },
+            ),
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
@@ -92,6 +102,7 @@ class _QuizSettingsScreenState extends State<QuizSettingsScreen> {
                       isEnglish: englishToVietnamese,
                       autoPronounce: autoPronounce,
                       isShuffle: shuffleQuestions,
+                      starCard: starCard,
                     ),
                   ),
                 );

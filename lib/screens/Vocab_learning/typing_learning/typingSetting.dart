@@ -17,6 +17,7 @@ class _TypingSettingScreenState extends State<TypingSettingScreen> {
   bool englishToVietnamese = true;
   bool autoPronounce = false;
   bool shuffleQuestions = false;
+  bool starCard = false;
 
   @override
   Widget build(BuildContext context) {
@@ -83,6 +84,15 @@ class _TypingSettingScreenState extends State<TypingSettingScreen> {
                 });
               },
             ),
+            SwitchListTile(
+              title: Text('Typing with star card'),
+              value: starCard,
+              onChanged: (bool value) {
+                setState(() {
+                  starCard = value;
+                });
+              },
+            ),
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
@@ -93,6 +103,7 @@ class _TypingSettingScreenState extends State<TypingSettingScreen> {
                       isEnglish: englishToVietnamese,
                       autoPronounce: autoPronounce,
                       isShuffle: shuffleQuestions,
+                      starCard: starCard,
                     ),
                   ),
                 );

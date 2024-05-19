@@ -12,6 +12,7 @@ class FlashCard extends StatefulWidget {
   final bool isShuffle;
   final bool isEnglish;
   final bool autoPronounce;
+  final bool starCard;
 
   const FlashCard({
     Key? key,
@@ -19,6 +20,7 @@ class FlashCard extends StatefulWidget {
     required this.isShuffle,
     required this.autoPronounce,
     required this.isEnglish,
+    required this.starCard,
   }) : super(key: key);
 
   @override
@@ -54,9 +56,21 @@ class _FlashCardState extends State<FlashCard> {
   }
 
   void getDataWord() {
-    wordPairs = widget.words.map((word) {
-      return {'english': word.english, 'vietnamese': word.vietnamese};
-    }).toList();
+    if (widget.starCard) {
+      List<Map<String, String>> getStarredWordPairs(List<Word> words) {
+        return words
+            .where((word) => word.isStarred) // Lọc các từ có isStarred = true
+            .map((word) {
+          return {'english': word.english, 'vietnamese': word.vietnamese};
+        }).toList();
+      }
+
+      wordPairs = getStarredWordPairs(widget.words);
+    } else {
+      wordPairs = widget.words.map((word) {
+        return {'english': word.english, 'vietnamese': word.vietnamese};
+      }).toList();
+    }
   }
 
   @override

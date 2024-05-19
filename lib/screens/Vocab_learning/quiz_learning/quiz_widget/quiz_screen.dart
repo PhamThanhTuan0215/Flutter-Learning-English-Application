@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'data.dart';
@@ -14,6 +16,7 @@ class QuizScreen extends StatefulWidget {
   final bool isShuffle;
   final bool isEnglish;
   final bool autoPronounce;
+  final bool starCard;
 
   const QuizScreen({
     Key? key,
@@ -21,6 +24,7 @@ class QuizScreen extends StatefulWidget {
     required this.isShuffle,
     required this.autoPronounce,
     required this.isEnglish,
+    required this.starCard,
   }) : super(key: key);
 
   @override
@@ -40,14 +44,16 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   void initState() {
     super.initState();
-    questionList =
-        getQuestions(widget.words, widget.isShuffle, widget.isEnglish);
+    questionList = getQuestions(
+        widget.words, widget.isShuffle, widget.isEnglish, widget.starCard);
     flutterTts = FlutterTts(); // Khởi tạo FlutterTts trong initState
 
     if (widget.autoPronounce) {
       _speak(questionList[currentQuestionIndex].questionText);
     }
     loadUser();
+
+    startTimer();
   }
 
   loadUser() async {
@@ -57,6 +63,28 @@ class _QuizScreenState extends State<QuizScreen> {
 
   int currentQuestionIndex = 0;
   int score = 0;
+  late Timer timer;
+  int duration = 0;
+
+  void startTimer() {
+    timer = Timer.periodic(Duration(seconds: 1), (Timer timer) {
+      if (mounted) {
+        setState(() {
+          duration++;
+        });
+      }
+    });
+  }
+
+  void stopTimer() {
+    timer.cancel();
+  }
+
+  String getFormattedTime(int seconds) {
+    int minutes = seconds ~/ 60;
+    int remainingSeconds = seconds % 60;
+    return '$minutes:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,6 +97,17 @@ class _QuizScreenState extends State<QuizScreen> {
             Navigator.pop(context);
           },
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Center(
+              child: Text(
+                getFormattedTime(duration),
+                style: TextStyle(fontSize: 18),
+              ),
+            ),
+          ),
+        ],
       ),
       body: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
@@ -288,6 +327,7 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   void _showScoreDialog() async {
+    stopTimer();
     bool isPassed = score >= questionList.length * 0.6;
     String title = isPassed ? "Passed" : "Failed";
 
@@ -380,7 +420,7 @@ class _QuizScreenState extends State<QuizScreen> {
         'mode': 'quiz', // You can change this based on your app logic
         'total': questionList.length,
         'correct': score,
-        'duration': '320' // Replace with actual duration
+        'duration': duration // Replace with actual duration
       }),
     );
 
@@ -396,7 +436,7 @@ class _QuizScreenState extends State<QuizScreen> {
     List<Map<String, dynamic>> wordMaps = correctWords.map((word) {
       return {
         '_id': word.id,
-        'numberCorrect': 1,
+        'numberCorrect': word.numberCorrect + 1,
         // Add other fields as needed
       };
     }).toList();

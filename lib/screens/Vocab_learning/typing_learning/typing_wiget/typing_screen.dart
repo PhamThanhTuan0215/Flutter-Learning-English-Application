@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -16,22 +17,41 @@ class Question {
   Question(this.questionText, this.correctAnswer, this.word);
 }
 
-List<Question> getQuestions(
-    List<Word> words, bool isShuffle, bool englishToVietnamese) {
-  List<Map<String, dynamic>> wordPairs = words.map((word) {
-    return {
-      'english': englishToVietnamese ? word.english : word.vietnamese,
-      'vietnamese': englishToVietnamese ? word.vietnamese : word.english,
-      'word': word, // Thêm biến word vào map
-    };
-  }).toList();
+List<Question> getQuestions(List<Word> words, bool isShuffle,
+    bool englishToVietnamese, bool isStarCard) {
+  if (isStarCard) {
+    List<Map<String, dynamic>> wordPairs = words
+        .where((word) => word.isStarred) // Lọc các từ có isStarred = true
+        .map((word) {
+      return {
+        'english': englishToVietnamese ? word.english : word.vietnamese,
+        'vietnamese': englishToVietnamese ? word.vietnamese : word.english,
+        'word': word, // Thêm biến word vào map
+      };
+    }).toList();
 
-  if (isShuffle) wordPairs.shuffle();
+    if (isShuffle) wordPairs.shuffle();
 
-  return wordPairs.map((wordPair) {
-    return Question(
-        wordPair['english']!, wordPair['vietnamese']!, wordPair['word']);
-  }).toList();
+    return wordPairs.map((wordPair) {
+      return Question(
+          wordPair['english']!, wordPair['vietnamese']!, wordPair['word']);
+    }).toList();
+  } else {
+    List<Map<String, dynamic>> wordPairs = words.map((word) {
+      return {
+        'english': englishToVietnamese ? word.english : word.vietnamese,
+        'vietnamese': englishToVietnamese ? word.vietnamese : word.english,
+        'word': word, // Thêm biến word vào map
+      };
+    }).toList();
+
+    if (isShuffle) wordPairs.shuffle();
+
+    return wordPairs.map((wordPair) {
+      return Question(
+          wordPair['english']!, wordPair['vietnamese']!, wordPair['word']);
+    }).toList();
+  }
 }
 
 class TypingScreen extends StatefulWidget {
@@ -39,6 +59,7 @@ class TypingScreen extends StatefulWidget {
   final bool isShuffle;
   final bool isEnglish;
   final bool autoPronounce;
+  final bool starCard;
 
   const TypingScreen({
     Key? key,
@@ -46,6 +67,7 @@ class TypingScreen extends StatefulWidget {
     required this.isShuffle,
     required this.autoPronounce,
     required this.isEnglish,
+    required this.starCard,
   }) : super(key: key);
 
   @override
@@ -62,17 +84,41 @@ class _TypingScreenState extends State<TypingScreen> {
   TextEditingController answerController = TextEditingController();
   int currentQuestionIndex = 0;
   int score = 0;
+  late Timer timer;
+  int duration = 0; // Time in seconds
 
   @override
   void initState() {
     super.initState();
-    questionList =
-        getQuestions(widget.words, widget.isShuffle, widget.isEnglish);
+    questionList = getQuestions(
+        widget.words, widget.isShuffle, widget.isEnglish, widget.starCard);
     flutterTts = FlutterTts();
 
     if (widget.autoPronounce) {
       _speak(questionList[currentQuestionIndex].questionText);
     }
+
+    startTimer();
+  }
+
+  void startTimer() {
+    timer = Timer.periodic(Duration(seconds: 1), (Timer timer) {
+      if (mounted) {
+        setState(() {
+          duration++;
+        });
+      }
+    });
+  }
+
+  void stopTimer() {
+    timer.cancel();
+  }
+
+  String getFormattedTime(int seconds) {
+    int minutes = seconds ~/ 60;
+    int remainingSeconds = seconds % 60;
+    return '$minutes:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -86,6 +132,17 @@ class _TypingScreenState extends State<TypingScreen> {
             Navigator.pop(context);
           },
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Center(
+              child: Text(
+                getFormattedTime(duration),
+                style: TextStyle(fontSize: 18),
+              ),
+            ),
+          ),
+        ],
       ),
       body: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
@@ -246,6 +303,7 @@ class _TypingScreenState extends State<TypingScreen> {
                     correctWords.add(questionList[currentQuestionIndex].word);
                   }
                 }
+                stopTimer(); // Stop the timer when the quiz is submitted
                 _showScoreDialog();
               } else {
                 _nextQuestion();
@@ -259,13 +317,12 @@ class _TypingScreenState extends State<TypingScreen> {
 
   void _nextQuestion() {
     if (answerController.text.isEmpty) {
-      // Hiển thị cảnh báo nếu người dùng không nhập câu trả lời
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Please type an answer.'),
         ),
       );
-      return; // Dừng hàm và không thực hiện tiếp các thao tác khác
+      return;
     }
 
     setState(() {
@@ -286,6 +343,7 @@ class _TypingScreenState extends State<TypingScreen> {
           _speak(questionList[currentQuestionIndex].questionText);
         }
       } else {
+        stopTimer(); // Stop the timer when the quiz is finished
         _showScoreDialog();
       }
     });
@@ -359,6 +417,8 @@ class _TypingScreenState extends State<TypingScreen> {
       score = 0;
       correctWords.clear();
       answerController.clear();
+      duration = 0; // Reset the duration
+      startTimer(); // Restart the timer
       for (var question in questionList) {
         question.userAnswer = null;
       }
@@ -387,7 +447,7 @@ class _TypingScreenState extends State<TypingScreen> {
         'mode': 'quiz', // You can change this based on your app logic
         'total': questionList.length,
         'correct': score,
-        'duration': '320' // Replace with actual duration
+        'duration': duration.toString(), // Replace with actual duration
       }),
     );
 
@@ -403,7 +463,7 @@ class _TypingScreenState extends State<TypingScreen> {
     List<Map<String, dynamic>> wordMaps = correctWords.map((word) {
       return {
         '_id': word.id,
-        'numberCorrect': 1,
+        'numberCorrect': word.numberCorrect + 1,
         // Add other fields as needed
       };
     }).toList();
